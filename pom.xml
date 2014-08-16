@@ -2,12 +2,63 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.legault</groupId>
-	<artifactId>letitrain</artifactId>
-	<version>4.2</version>
+	<artifactId>LetItRain</artifactId>
+	<version>4.2-b${env.BUILD_NUMBER}</version>
 	<name>LetItRain</name>
 	<description>Bukkit plugin to unleash rain of entities and items</description>
+
+	<repositories>
+		<!-- Bukkit -->
+		<repository>
+			<id>bukkit-repo</id>
+			<url>http://repo.bukkit.org/content/groups/public/</url>
+		</repository>
+		<!-- Addstar repos -->
+		<repository>
+			<id>addstar-repo</id>
+			<url>http://maven.addstar.com.au/artifactory/ext-release-local</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>addstar-snapshot-repo</id>
+			<url>http://maven.addstar.com.au/artifactory/ext-snapshot-local</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.bukkit</groupId>
+			<artifactId>bukkit</artifactId>
+			<version>1.7.10-R0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>au.com.addstar</groupId>
+			<artifactId>Monolith</artifactId>
+			<version>1.1.0-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<sourceDirectory>src</sourceDirectory>
+		<resources>
+			<resource>
+				<targetPath>.</targetPath>
+				<filtering>true</filtering>
+				<directory>${basedir}/.</directory>
+				<includes>
+					<include>plugin.yml</include>
+				</includes>
+			</resource>
+		</resources>
+
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -19,22 +70,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
-
-	<repositories>
-		<!-- Bukkit -->
-		<repository>
-			<id>bukkit-repo</id>
-			<url>http://repo.bukkit.org/content/groups/public/</url>
-		</repository>
-	</repositories>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.bukkit</groupId>
-			<artifactId>bukkit</artifactId>
-			<version>1.7.10-R0.1-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
 
 </project>

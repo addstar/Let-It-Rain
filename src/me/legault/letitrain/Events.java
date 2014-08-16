@@ -1,4 +1,4 @@
-package me.legault.letItRain;
+package me.legault.letitrain;
 
 import java.util.ArrayList;
 import java.util.Arrays;

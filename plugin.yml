@@ -1,5 +1,5 @@
 name: LetItRain
-main: me.legault.LetItRain.LetItRain
+main: me.legault.letitrain.LetItRain
 version: 4.2.0
 
 commands:

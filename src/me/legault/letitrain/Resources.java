@@ -1,4 +1,4 @@
-package me.legault.letItRain;
+package me.legault.letitrain;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
