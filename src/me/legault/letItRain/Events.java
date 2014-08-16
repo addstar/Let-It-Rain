@@ -136,11 +136,4 @@ public class Events implements Listener{
 			snows.add(snowball);
 		}
 	}
-	
-	@EventHandler
-	public void update(PlayerJoinEvent event){
-		if (LetItRain.isToBeUpdated)
-			Resources.privateMsg(event.getPlayer(), Resources.getPluginTitle() + " needs to be updated to version " + LetItRain.newVersion);
-	}
-
 }

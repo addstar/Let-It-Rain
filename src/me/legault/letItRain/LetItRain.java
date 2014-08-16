@@ -8,16 +8,9 @@
 
 package me.legault.letItRain;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +21,6 @@ import java.util.logging.Logger;
 
 import org.bukkit.Material;
 import org.bukkit.Server;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -50,7 +42,7 @@ public class LetItRain extends JavaPlugin{
 	
 	//Defaults
 	public static int dAmount, maxAmount, maxRadius, dRadius, dLightningPower;
-	public static boolean dRemoveArtifact, isToBeUpdated, destructiveArrows, checkForUpdate, rainBlocks, rainPotions, rainLava, rainWater, dispenserWorksWithFireSnowballs;
+	public static boolean dRemoveArtifact, destructiveArrows, rainBlocks, rainPotions, rainLava, rainWater, dispenserWorksWithFireSnowballs;
 	public static String dPunishMsg, dZeusMsg, dGrenadeMsg, dRainMsg, dFirerainMsg;
 	public static int item, itemZeus;
 	public static String newVersion;
@@ -108,39 +100,6 @@ public class LetItRain extends JavaPlugin{
 		
 		lirh = new LetItRainHelp(this);
 		getCommand("letitrain").setExecutor(lirh);
-		
-		//Checks for more recent version
-		isToBeUpdated = false;
-		if (checkForUpdate){
-			try{
-				URL url = new URL("http://www.mathieu.legault.me/LetItRain.properties");
-				URLConnection connection = url.openConnection();
-			
-				connection.setDoInput(true);
-			    InputStream inStream = connection.getInputStream();
-			    BufferedReader input = new BufferedReader(new InputStreamReader(inStream));
-			    
-			    String line = input.readLine();
-			    if (line != null){
-			    	int mostRecent = Integer.parseInt(line.replaceAll(".", ""));
-			    	while(mostRecent < 1000)
-			    		mostRecent *= 10;
-			    	int plugin = Integer.parseInt(Resources.getPluginVersion().replaceAll(".", ""));
-			    	while(plugin < 1000)
-			    		plugin *= 10;
-			    	if(plugin < mostRecent)
-			    		log.info(Resources.getPluginTitle() + " needs to be updated to version " + line);
-			    }
-			    
-			}catch(Exception e){}
-		}
-		
-		try{
-			//Metrics
-		    Metrics metrics = new Metrics(this);
-		    metrics.start();
-		}catch(Exception e){}
-		
 		
 		log.info(Resources.getPluginTitle() + " enabled");
 		
@@ -223,7 +182,6 @@ public class LetItRain extends JavaPlugin{
 					"http://mathieu.legault.me/\n" +
 					"http://bathlamos.me/\n");
 			
-			checkForUpdate = conf("LetItRain.Check for updates", true);
 			dLightningPower = conf("LetItRain.Zeus.Lightning explosion power", dLightningPower);
 			dZeusMsg = conf("LetItRain.Zeus.Message", dZeusMsg);
 			dGrenadeMsg = conf("LetItRain.Grenade Launcher.Message", dGrenadeMsg);

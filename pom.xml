@@ -2,9 +2,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.legault</groupId>
-	<artifactId>let-it-rain</artifactId>
+	<artifactId>letitrain</artifactId>
 	<version>4.2</version>
-	<name>Let It Rain</name>
+	<name>LetItRain</name>
 	<description>Bukkit plugin to unleash rain of entities and items</description>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -33,7 +33,7 @@
 		<dependency>
 			<groupId>org.bukkit</groupId>
 			<artifactId>bukkit</artifactId>
-			<version>[1.6.2,)</version>
+			<version>1.7.10-R0.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
