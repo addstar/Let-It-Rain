@@ -34,47 +34,53 @@ public class Rain implements CommandExecutor{
 	public static HashMap<Integer, Integer> runningTasks = new HashMap<Integer, Integer>();
 	
 	public boolean onCommand(final CommandSender sender, Command cmd, String label,  String[] args){
-		boolean isAmountInit = false;
-		boolean isTime = false;
 		boolean isOnFire = false;
-		int amount = LetItRain.dAmount, radius = LetItRain.dRadius;
+		int amount = 0, radius = 0, time = 0;
 		String targetName = null;
 		Location targetLocation = null;
 		EntityType obj = null;
 		PotionType potion = null;
-		//Material mat = null;
 		ItemStack item = null;
 		
-		//Permissions
+		// Check permissions
 		if (!sender.hasPermission("LetItRain.rain"))
 			return true;
 		
-		//Firerain command
+		// Firerain command
 		if (label.equalsIgnoreCase("firerain"))
 			isOnFire = true;
 		
-		//First parameter -animal- (String, int) is required
-		if (args == null || args.length == 0){
+		// Give command usage if no params specified
+		if (args == null || args.length < 4) {
 			displayHelp(label, sender);
 			return true;
 		}
 		
-		//Check if the user tries to add/remove a command
+		// Help
+		if (args[0].equalsIgnoreCase("help")){
+			displayHelp(label, sender);
+			return true;
+		}
+		
+		// Check if the user tries to add/remove a command
 		if(args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("delete"))
 			return addRemoveCoordinates(sender, args);
 		
 		obj = findEntity(args[0]);
-		
+
+		// Parse potions
 		if(LetItRain.rainPotions && (args[0].startsWith("potion:") || args[0].startsWith("potions:"))){
 			if(args[0].startsWith("potion:"))
 				potion = findPotion(args[0].substring("potion:".length()));
 			else
 				potion = findPotion(args[0].substring("potions:".length()));
 		}
-		
+
+		// Parse other entity names
 		if (potion == null && LetItRain.rainBlocks)
 			item = getItem(args[0]);
-		
+
+		// Validate entities/potions
 		if (obj == null && item == null && potion == null){
 			Resources.privateMsg(sender, "Please enter a valid entity/material id or name");
 			if (!LetItRain.rainBlocks)
@@ -82,78 +88,80 @@ public class Rain implements CommandExecutor{
 			return true;
 		}
 
-		//Parse remaining arguments
-		int recognizedParams = 0;
-		for (int i = 1; i < args.length; i++){
-			
-			//Parse player/target
-			if (targetName == null){
-				
-				//Find programmable target
-				Coordinate c = null;
-				for(Coordinate f: LetItRain.coordinates)
-					if(f.hasName(args[i])){
-						c = f;
-						break;
-					}
-				
-				if(c != null){
-					targetName = args[i];
-					World w = LetItRain.server.getWorld(c.world);
-					targetLocation = new Location(w, c.x, c.y, c.z);
-				}else{
-					//Find player
-					Player target = Resources.isPlayer(args[i]);
-					if(target != null){
-						targetName = target.getDisplayName();
-						targetLocation = target.getLocation();
-					}
-				}
-				if (targetName != null)
-					recognizedParams++;
+		// Parse named target
+		for (Coordinate f: LetItRain.coordinates) {
+			//Check if the target is a named location from the config
+			if (f.hasName(args[1])) {
+				targetName = args[1];
+				World w = LetItRain.server.getWorld(f.world);
+				targetLocation = new Location(w, f.x, f.y, f.z);
+				break;
 			}
-			
-			//Help
-			if (args[i].equalsIgnoreCase("help")){
-				displayHelp(label, sender);
-				return true;
+		}
+
+		// Parse player
+		if (targetName == null) {
+			Player target = Resources.isPlayer(args[1]);
+			if (target != null) {
+				targetName = target.getDisplayName();
+				targetLocation = target.getLocation();
 			}
-			
-			//Parse amount and radius
-			try{
-				if(args[i].endsWith("s") && !isAmountInit){
-					// This is a time (x secs) not an amount
-					isTime = true;
-					args[i] = args[i].substring(0, args[i].length() - 1);
-				}
-				int holder = Integer.parseInt(args[i]);
-				recognizedParams++;
-				if (!isAmountInit){
-					amount = holder;
-					isAmountInit = true;
-				}else
-					radius = holder;
-			}catch(NumberFormatException e){}
+		}
+
+		// Parse amount/time
+		String sAmt = null, sTime = null;
+		if (args[2].contains("/")) {
+			// This is amount+time
+			sAmt = args[2].split("/")[0];
+			sTime = args[2].split("/")[1];
+			if (sTime.endsWith("s")) {
+				sTime = sTime.substring(0, sTime.length() - 1);
+			}
+		}
+		else if (args[2].endsWith("s")) {
+			// This is a time only (x secs) not an amount
+			sTime = args[2].substring(0, args[2].length() - 1);
+		} else {
+			// Amount only
+			sAmt = args[2];
 		}
 		
-		//Parameter not recognized
-		if (recognizedParams != args.length - 1){
-			Resources.privateMsg(sender, "One or more of your parameters were not recognized");
-			return false;
+		try {
+			if (sAmt != null)
+				amount = Integer.parseInt(sAmt);
+		} catch(NumberFormatException e) {
+			amount = -1;
+		}
+
+		try {
+			if (sTime != null)
+				time = Integer.parseInt(sTime);
+		} catch(NumberFormatException e) {
+			time = -1;
+		}
+
+		try {
+			radius = Integer.parseInt(args[3]);
+		} catch(NumberFormatException e) {
+			radius = -1;
 		}
 		
 		//Impossible parameters
-		if (radius < 1 || amount < 1){
-			Resources.privateMsg(sender, "Send at least one entity with a radius of at least 1");
+		if (time == -1) {
+			Resources.privateMsg(sender, "Time parameter of \"" + sTime + "\" is not valid.");
 			return true;
-		}else if (amount > LetItRain.maxAmount){
-			amount = LetItRain.maxAmount;
-			Resources.privateMsg(sender, "The maximum entities allowed is " + LetItRain.maxAmount);
+		}
+		if (amount == -1) {
+			Resources.privateMsg(sender, "Amount parameter of \"" + sAmt + "\" is not valid.");
+			return true;
+		}
+		if (radius == -1) {
+			Resources.privateMsg(sender, "Radius parameter of \"" + args[3] + "\" is not valid.");
 			return true;
 		}
 		
 		//Max radius
-		if(isTime && radius > LetItRain.maxRadius){
+		if(radius > LetItRain.maxRadius){
 			Resources.privateMsg(sender, "The maximum radius is " + LetItRain.maxRadius);
 			return true;
 		}
@@ -181,21 +189,11 @@ public class Rain implements CommandExecutor{
 			}
 		}
 		
-		final long initTime = System.currentTimeMillis();
-		Random rdm = new Random();
-		final int myTaskIdentifier = rdm.nextInt();
-		final PotionType fPotion = potion;
-		final Location fLocation = targetLocation;
-		final ItemStack fItem = item;
-		final int fRadius = radius, fAmount = amount;
-		final EntityType fObj = obj;
-		final boolean fIsOnFire = isOnFire;
-		
-		if((item != null) && ((!LetItRain.rainLava && item.getType() == Material.LAVA) || (!LetItRain.rainWater && item.getType() == Material.WATER))){
+		if ((item != null) && ((!LetItRain.rainLava && item.getType() == Material.LAVA) || (!LetItRain.rainWater && item.getType() == Material.WATER))) {
 			// WATER or LAVA
+			Resources.privateMsg(sender, "Do not use water or lava! Bad things happen...");
+			/*
 			World w = targetLocation.getWorld();
-			if(recognizedParams == 1)
-				radius = amount;
 			for(int i = -radius; i < radius; i++){
 				double boundary = Math.sqrt(Math.pow(radius, 2) - Math.pow(i, 2));
 				for(int j = -(int)boundary; j < boundary; j++) {
@@ -203,22 +201,42 @@ public class Rain implements CommandExecutor{
 					w.getBlockAt(l).setType(item.getType());
 				}
 			}
-		}else if(isTime){
+			*/
+		} else if (time > 0) {
 			// TIME based spawning (100 per second for X seconds)
-			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable(){
-
+			Random rdm = new Random();
+			final long startTime = System.currentTimeMillis();
+			final int myTaskIdentifier = rdm.nextInt();
+			final PotionType fPotion = potion;
+			final Location fLocation = targetLocation;
+			final ItemStack fItem = item;
+			final int fRadius = radius;
+			if (amount == 0) {
+				amount = 50;	// Default batch amount
+			} else {
+				amount = (amount / time);	// Calculate batch amount
+			}
+			final int fAmount = amount;
+			final int fTime = time;
+			final EntityType fObj = obj;
+			final boolean fIsOnFire = isOnFire;
+			
+			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable() {
 				@Override
 				public void run() {
-					if(!spawnEntities(fLocation, fObj, sender, fItem, fPotion, (int)(Math.max(0.125 * Math.pow(fRadius,  2), 100)), fRadius, fIsOnFire) || 
-							System.currentTimeMillis() - initTime > Math.max(fAmount * 1000 - 7000, 1000))
+					long timeRemaining = (startTime + (fTime * 1000)) - System.currentTimeMillis();
+
+					boolean result = spawnEntities(fLocation, fObj, sender, fItem, fPotion, fAmount, fRadius, fIsOnFire); 
+					if ((!result) || (timeRemaining < 1000)) { 
 						StopScheduler(myTaskIdentifier);
+					}
 				}
 				
 			}, 0L,  20); // There are 20 server ticks per second
 			runningTasks.put(myTaskIdentifier, id);
 		}else{
 			// ALL other drops
-			boolean res = spawnEntities(targetLocation, obj, sender, item, potion, amount, radius, fIsOnFire);
+			boolean res = spawnEntities(targetLocation, obj, sender, item, potion, amount, radius, isOnFire);
 			if(!res)
 				return true;
 		}
@@ -307,7 +325,7 @@ public class Rain implements CommandExecutor{
 			String dpart = search.split(":")[1];
 			try {
 				data = Short.parseShort(dpart);
-				if(data < 0)
+				if(data < 1)
 					throw new IllegalArgumentException("Data value for " + itemname + " cannot be less than 0");
 			}
 			catch(NumberFormatException e) {
@@ -330,7 +348,7 @@ public class Rain implements CommandExecutor{
 		// Bukkit name
 		Material mat = Material.getMaterial(name.toUpperCase());
 		if (mat != null)
-			return new MaterialDefinition(mat, (short)-1);
+			return new MaterialDefinition(mat, (short)0);
 		
 		// Id
 		try
@@ -343,7 +361,7 @@ public class Rain implements CommandExecutor{
 		}
 		
 		if(mat != null)
-			return new MaterialDefinition(mat, (short)-1);
+			return new MaterialDefinition(mat, (short)0);
 
 		// ItemDB
 		return Lookup.findItemByName(name);
@@ -369,8 +387,7 @@ public class Rain implements CommandExecutor{
 	 * Display help
 	 */
 	private void displayHelp(String label, CommandSender sender){
-		Resources.privateMsg(sender, "/" + label + " <entity> <player> <amount> <radius>");
-		Resources.privateMsg(sender, "All parameters optional except entity. Order can be changed except for amount and radius");
+		Resources.privateMsg(sender, "/" + label + " <entity> <player|place> <amount/time> <radius>");
 	}
 	
 	/**
