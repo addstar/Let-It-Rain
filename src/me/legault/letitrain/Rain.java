@@ -92,7 +92,7 @@ public class Rain implements CommandExecutor{
 		for (Coordinate f: LetItRain.coordinates) {
 			//Check if the target is a named location from the config
 			if (f.hasName(args[1])) {
-				targetName = args[1];
+				targetName = f.name;
 				World w = LetItRain.server.getWorld(f.world);
 				targetLocation = new Location(w, f.x, f.y, f.z);
 				break;
@@ -105,6 +105,9 @@ public class Rain implements CommandExecutor{
 			if (target != null) {
 				targetName = target.getDisplayName();
 				targetLocation = target.getLocation();
+			} else {
+				Resources.privateMsg(sender, "Invalid player/place specified");
+				return true;
 			}
 		}
 
