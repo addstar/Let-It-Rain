@@ -328,7 +328,7 @@ public class Rain implements CommandExecutor{
 			String dpart = search.split(":")[1];
 			try {
 				data = Short.parseShort(dpart);
-				if(data < 1)
+				if(data < 0)
 					throw new IllegalArgumentException("Data value for " + itemname + " cannot be less than 0");
 			}
 			catch(NumberFormatException e) {
