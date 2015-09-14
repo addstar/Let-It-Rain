@@ -417,7 +417,7 @@ public class Rain implements CommandExecutor{
 
 		word = word.toLowerCase();
 		
-		if(!word.equals("zombies") || !word.equals("slimes")){
+		if(!word.equals("zombies") && !word.equals("slimes")){
 
 			if(word.matches(".*ives$"))
 				return word.substring(0, word.length() - 3) + "fe";
