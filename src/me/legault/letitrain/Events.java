@@ -107,7 +107,8 @@ public class Events implements Listener{
 		}else if(event.getPlayer().getItemInHand().getTypeId() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
 			
 			Player player = event.getPlayer();
-			Location location = player.getTargetBlock(null, 800).getLocation(); 
+			Location location = player.getLocation();
+			location.setY(800);
 			 
 			World world = player.getWorld();
 			world.createExplosion(location, LetItRain.dLightningPower);
