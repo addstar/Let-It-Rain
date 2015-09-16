@@ -442,7 +442,7 @@ public class Rain implements CommandExecutor{
 	private static String toPlural(String word){
 		word = word.toLowerCase();
 		
-		if(word.equals("lava") || word.equals("water") || word.equals("wool") || word.endsWith("grass") || word.endsWith("glass"))
+		if(word.equals("lava") || word.equals("water") || word.equals("wool") || word.endsWith("grass") || word.endsWith("glass") || word.endsWith("beef"))
 			return word;
 
 		if(word.matches(".*[sxz(ch)(sh)]$"))
