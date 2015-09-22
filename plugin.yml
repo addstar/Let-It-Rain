@@ -19,6 +19,11 @@ commands:
       usage: /<command> <creature> <player> <amount> <radius>
       default: op
       permission: LetItRain.firerain
+   effectrain:
+      description: Spawns a rain of animals on selected player (with particle effects)
+      usage: /<command> <effect> <creature> <player> <amount> <radius>
+      default: op
+      permission: LetItRain.firerain
    strike:
       description: Kill a player by striking it with lightning
       usage: /<command> <player>

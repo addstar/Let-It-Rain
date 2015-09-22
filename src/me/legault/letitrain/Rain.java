@@ -2,9 +2,14 @@ package me.legault.letitrain;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+
+import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,24 +28,32 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import au.com.addstar.monolith.MonoWorld;
+import au.com.addstar.monolith.ParticleEffect;
+import au.com.addstar.monolith.StringTranslator;
 import au.com.addstar.monolith.lookup.Lookup;
 import au.com.addstar.monolith.lookup.MaterialDefinition;
 
 public class Rain implements CommandExecutor{
 	
 	public static HashMap<Entity, Boolean> thrownedItems = new HashMap<Entity, Boolean>();
-	public static HashMap<Integer, Integer> runningTasks = new HashMap<Integer, Integer>();
-	
+	public static HashMap<Long, BukkitTask> runningTasks = new HashMap<Long, BukkitTask>();
+	public static AtomicLong taskIdentifier = new AtomicLong(Long.MIN_VALUE);
+	public static Random randomGen = new Random();
+
 	public boolean onCommand(final CommandSender sender, Command cmd, String label,  String[] args){
 		boolean isOnFire = false;
+		boolean useParticleEffects = false;
 		int amount = 0, radius = 0, time = 0;
 		String targetName = null;
 		Location targetLocation = null;
 		EntityType obj = null;
 		PotionType potion = null;
 		ItemStack item = null;
+		ParticleEffect effectType = ParticleEffect.FIREWORKS_SPARK;
 		
 		// Check permissions
 		if (!sender.hasPermission("LetItRain.rain"))
@@ -50,15 +63,29 @@ public class Rain implements CommandExecutor{
 		if (label.equalsIgnoreCase("firerain"))
 			isOnFire = true;
 		
+		// Effectrain command
+		if (label.equalsIgnoreCase("effectrain")) {
+			useParticleEffects = true;
+			if (args.length > 4) {
+				try {
+					effectType = ParticleEffect.valueOf(args[4].toUpperCase());
+				}
+				catch (Exception e) {
+					sender.sendMessage(ChatColor.RED + "Unknown particle effect type \"" + args[4].toUpperCase() + "\".");
+					return true;
+				}
+			}
+		}
+
 		// Give command usage if no params specified
 		if (args == null || args.length < 4) {
-			displayHelp(label, sender);
+			displayHelp(label, sender, useParticleEffects);
 			return true;
 		}
 		
 		// Help
 		if (args[0].equalsIgnoreCase("help")){
-			displayHelp(label, sender);
+			displayHelp(label, sender, useParticleEffects);
 			return true;
 		}
 		
@@ -77,8 +104,12 @@ public class Rain implements CommandExecutor{
 		}
 
 		// Parse other entity names
-		if (potion == null && LetItRain.rainBlocks)
-			item = getItem(args[0]);
+		MaterialDefinition itemDef = null;
+		if (potion == null && LetItRain.rainBlocks) {
+			itemDef = getItem(args[0]);
+			if (itemDef != null)
+				item = itemDef.asItemStack(1);
+		}
 
 		// Validate entities/potions
 		if (obj == null && item == null && potion == null){
@@ -207,9 +238,7 @@ public class Rain implements CommandExecutor{
 			*/
 		} else if (time > 0) {
 			// TIME based spawning (100 per second for X seconds)
-			Random rdm = new Random();
 			final long startTime = System.currentTimeMillis();
-			final int myTaskIdentifier = rdm.nextInt();
 			final PotionType fPotion = potion;
 			final Location fLocation = targetLocation;
 			final ItemStack fItem = item;
@@ -223,23 +252,26 @@ public class Rain implements CommandExecutor{
 			final int fTime = time;
 			final EntityType fObj = obj;
 			final boolean fIsOnFire = isOnFire;
+			final boolean fUseParticleEffects = useParticleEffects;
+			final ParticleEffect fEffectType = effectType;
 			
-			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable() {
+			final long myTaskIdentifier = GetNextTaskID();
+			BukkitTask task = LetItRain.server.getScheduler().runTaskTimer(LetItRain.plugin, new Runnable() {
 				@Override
 				public void run() {
 					long timeRemaining = (startTime + (fTime * 1000)) - System.currentTimeMillis();
 
-					boolean result = spawnEntities(fLocation, fObj, sender, fItem, fPotion, fAmount, fRadius, fIsOnFire); 
+					boolean result = spawnEntities(fLocation, fObj, sender, fItem, fPotion, fAmount, fRadius, fIsOnFire, fUseParticleEffects, fEffectType); 
 					if ((!result) || (timeRemaining < 1000)) { 
 						StopScheduler(myTaskIdentifier);
 					}
 				}
 				
-			}, 0L,  20); // There are 20 server ticks per second
-			runningTasks.put(myTaskIdentifier, id);
+			}, 0L, 20L);
+			runningTasks.put(myTaskIdentifier, task);
 		}else{
 			// ALL other drops
-			boolean res = spawnEntities(targetLocation, obj, sender, item, potion, amount, radius, isOnFire);
+			boolean res = spawnEntities(targetLocation, obj, sender, item, potion, amount, radius, isOnFire, useParticleEffects, effectType);
 			if(!res)
 				return true;
 		}
@@ -251,10 +283,20 @@ public class Rain implements CommandExecutor{
 		else if(potion != null)
 			name = potion.name() + " potion";
 		else
-			name = item.getType().name();
+			name = StringTranslator.getName(item);
 
 		name = name.replaceAll("_", " ").toLowerCase();
 		
+		// Fix up spawn egg names
+		if (name.startsWith("spawn ")) {
+			name = name.replace("spawn ", "") + " egg";
+		}
+
+		// Change "spruce wood" to "spruce log"
+		if (name.endsWith(" wood")) {
+			name = name.replace(" wood", " log");
+		}
+
 		if(amount > 1)
 			name = toPlural(name);
 
@@ -264,19 +306,21 @@ public class Rain implements CommandExecutor{
 	}
 	
 	private static boolean spawnEntities(Location location, EntityType obj, CommandSender sender, ItemStack item, 
-			PotionType potionType, int amount, int radius, boolean isOnFire){
+			PotionType potionType, int amount, int radius, boolean isOnFire, boolean useParticleEffects, ParticleEffect effect){
 		
 		Location newLoc;
-		Random rdm = new Random();
-		
+		List<Location> locs = new ArrayList<Location>();
+
 		try{
 			//Spawn entity
 			for (int i = 0; i < amount; i++){
 				newLoc = location.clone();
-				newLoc.setX(location.getX()+(double)rdm.nextInt(radius*2)-(double)radius);
-				newLoc.setY(location.getY()+(double)rdm.nextInt(250)+100.0);
-				newLoc.setZ(location.getZ()+(double)rdm.nextInt(radius*2)-(double)radius);
-				
+				newLoc.setX(location.getX()+(double)randomGen.nextInt(radius*2)-(double)radius);
+				newLoc.setY(location.getY()+(double)randomGen.nextInt(250)+100.0);
+				newLoc.setZ(location.getZ()+(double)randomGen.nextInt(radius*2)-(double)radius);
+
+				locs.add(newLoc);
+
 				if (obj != null){
 					Entity creature = location.getWorld().spawn(newLoc, obj.getEntityClass());
 					thrownedItems.put(creature, isOnFire);
@@ -284,11 +328,11 @@ public class Rain implements CommandExecutor{
 					if (creature instanceof Fireball)
 						((Fireball)creature).setDirection(new Vector(0, -1, 0));
 					if (creature instanceof ExperienceOrb)
-						((ExperienceOrb) creature).setExperience(1000 + (int)rdm.nextFloat()*300);
+						((ExperienceOrb) creature).setExperience(1000 + (int)randomGen.nextFloat()*300);
 					if (creature instanceof TNTPrimed)
 						((TNTPrimed) creature).setFuseTicks(150);
 					if (isOnFire)
-						creature.setFireTicks(1000 + (int)rdm.nextFloat()*300);
+						creature.setFireTicks(1000 + (int)randomGen.nextFloat()*300);
 				} else {
 					if (potionType != null) {
 						item = new Potion(potionType).toItemStack(1);
@@ -296,6 +340,9 @@ public class Rain implements CommandExecutor{
 					location.getWorld().dropItem(newLoc, item);
 				}
 			}
+			// Do we want particle effects for the drops?
+			if (useParticleEffects)
+				doParticleEffects(locs, effect);
 		}catch(Exception e){
 			Resources.privateMsg(sender, "This entity or world is invalid");
 			return false;
@@ -303,6 +350,38 @@ public class Rain implements CommandExecutor{
 		return true;
 	}
 	
+	private static void doParticleEffects(final List<Location> SpawnLocs, ParticleEffect effectType) {
+		final long interval = 2; // particle tick interval (run effects every X ticks)
+		final int seconds = 10;   // span effects over X seconds
+		final int amount = SpawnLocs.size();
+		final int perBatch = (int) Math.ceil(amount / Math.ceil((seconds * 20) / interval)); // split into per-tick batches
+		final int minOffsetY = 3;
+		final int maxOffsetY = 6;
+		final ParticleEffect fEffectType = effectType;
+
+		final long myTaskIdentifier = GetNextTaskID();
+		BukkitTask task = LetItRain.server.getScheduler().runTaskTimer(LetItRain.plugin, new Runnable() {
+			List<Location> locs = SpawnLocs;
+
+			@Override
+			public void run() {
+				for (int x = 0; x < perBatch; x++) {
+					if (locs.size() == 0) {
+						StopScheduler(myTaskIdentifier);
+						return;
+					} else {
+						Location loc = locs.remove(locs.size() - 1);
+						loc.setY(loc.getWorld().getHighestBlockYAt(loc) + minOffsetY + randomGen.nextInt(maxOffsetY - minOffsetY));
+						final MonoWorld mw = MonoWorld.getWorld(loc.getWorld());
+						mw.playParticleEffect(loc, fEffectType, 1f, 20);
+					}
+				}
+			}
+		}, 1L, interval);
+		runningTasks.put(myTaskIdentifier, task);
+		return;
+	}
+
 	private EntityType findEntity(String token){
 		
 		token = toSingular(token);
@@ -318,33 +397,32 @@ public class Rain implements CommandExecutor{
 		return null;
 	}
 	
-	private ItemStack getItem(String search)
+	private MaterialDefinition getItem(String search)
 	{
-		String itemname = search.split(":")[0];
-		MaterialDefinition def = null;
-		short data = 0;
+		// Get item value + data value
+		String[] parts = search.split(":");
+		String itemname = parts[0];
+		MaterialDefinition def = getMaterial(itemname);
+		if (def == null) return null;
 		
 		if(search.contains(":")) {
 			String dpart = search.split(":")[1];
 			try {
-				data = Short.parseShort(dpart);
+				short data = Short.parseShort(dpart);
 				if(data < 0)
 					throw new IllegalArgumentException("Data value for " + itemname + " cannot be less than 0");
+
+				// Return new definition with specified data value
+				return new MaterialDefinition(def.getMaterial(), data);
 			}
 			catch(NumberFormatException e) {
 				throw new IllegalArgumentException("Data value after " + itemname);
 			}
+		} else {
+			return def;
 		}
-
-		def = getMaterial(itemname);
-		if (def == null) return null;
-		
-		def = new MaterialDefinition(def.getMaterial(), data);
-
-		ItemStack item = def.asItemStack(1);
-		return item;
 	}
-	
+
 	@SuppressWarnings( "deprecation" )
     private MaterialDefinition getMaterial(String name)
 	{
@@ -379,18 +457,28 @@ public class Rain implements CommandExecutor{
 				return o;
 		return null;
 	}
+
+	private static long GetNextTaskID() {
+		return taskIdentifier.getAndIncrement();
+	}
 	
-	private static void StopScheduler(int id){
-		Integer i = runningTasks.remove(id);
-		if(i != null)
-			LetItRain.server.getScheduler().cancelTask(i);
+	private static void StopScheduler(long id){
+		BukkitTask task = runningTasks.remove(id);
+		if(task != null) {
+			// cancel the running task
+			task.cancel();
+		}
 	}
 
 	/**
 	 * Display help
 	 */
-	private void displayHelp(String label, CommandSender sender){
-		Resources.privateMsg(sender, "/" + label + " <entity> <player|place> <amount/time> <radius>");
+	private void displayHelp(String label, CommandSender sender, boolean useParticleEffects){
+		if (useParticleEffects) {
+			Resources.privateMsg(sender, "/" + label + " <entity> <player|place> <amount/time> <radius> [effect]");
+		} else {
+			Resources.privateMsg(sender, "/" + label + " <entity> <player|place> <amount/time> <radius>");
+		}
 	}
 	
 	/**
@@ -442,7 +530,8 @@ public class Rain implements CommandExecutor{
 	private static String toPlural(String word){
 		word = word.toLowerCase();
 		
-		if(word.equals("lava") || word.equals("water") || word.equals("wool") || word.endsWith("grass") || word.endsWith("glass") || word.endsWith("beef"))
+		if(word.equals("lava") || word.equals("water") || word.equals("wool") || word.endsWith("grass")
+				|| word.endsWith("glass") || word.endsWith("beef") || word.endsWith("planks"))
 			return word;
 
 		if(word.matches(".*[sxz(ch)(sh)]$"))

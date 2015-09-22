@@ -84,6 +84,7 @@ public class LetItRain extends JavaPlugin{
 		rainExec = new Rain();
 		getCommand("rain").setExecutor(rainExec);
 		getCommand("firerain").setExecutor(rainExec);
+		getCommand("effectrain").setExecutor(rainExec);
 		
 		zeusExec = new Zeus(this);
 		getCommand("zeus").setExecutor(zeusExec);
