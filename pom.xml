@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot</artifactId>
-			<version>1.8.7-R0.1-SNAPSHOT</version>
+			<version>1.10-R0.1-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.spigotmc</groupId>
@@ -65,7 +65,7 @@
 		<dependency>
 			<groupId>au.com.addstar</groupId>
 				<artifactId>Monolith</artifactId>
-				<version>1.1.0-SNAPSHOT</version>
+				<version>1.4.4-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.spigotmc</groupId>

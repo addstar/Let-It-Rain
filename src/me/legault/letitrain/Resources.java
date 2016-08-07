@@ -10,13 +10,10 @@ public class Resources {
 	public static final ChatColor msgColor = ChatColor.AQUA;
 	
 	public static String getPluginTitle(){
-		return "LetItRain " + getPluginVersion();
-	}
-	
-	public static String getPluginVersion(){
-		return "4.2.0";
+		return LetItRain.plugin.getDescription().getFullName();
 	}
 
+	@SuppressWarnings("deprecation")
 	public static EntityType getEntityType(String identifier){
 		EntityType e;
 		try{
@@ -40,13 +37,13 @@ public class Resources {
 	}
 	
 	public static void broadcast(String msg){
-		LetItRain.server.broadcastMessage(msgColor + msg);
+		LetItRain.server.broadcastMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
 	}
 	
 	public static void privateMsg(CommandSender sender, String msg){
 		if (sender != null){
 			if (sender instanceof Player)
-				((Player)sender).sendMessage(msgColor + msg);
+				((Player)sender).sendMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
 			else
 				sender.sendMessage(msg);
 		}

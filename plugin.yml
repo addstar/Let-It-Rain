@@ -1,6 +1,6 @@
 name: LetItRain
 main: me.legault.letitrain.LetItRain
-version: 4.2.0
+version: 4.5.4
 
 commands:
    zeus:
@@ -10,22 +10,22 @@ commands:
       permission: LetItRain.zeus
       aliases: ['z']
    rain:
-      description: Spawns a rain of animals on selected player
-      usage: /<command> <creature> <player> <amount> <radius>
+      description: Spawns a rain of animals or items on selected player
+      usage: /<command> <entity|item|hand> <player|coord name> <amount|duration|AmountPerSecond/duration> <radius>
       default: op
       permission: LetItRain.rain
    firerain:
       description: Spawns a rain of burning animals on selected player
-      usage: /<command> <creature> <player> <amount> <radius>
+      usage: /<command> <creature> <player|coord name> <amount|duration|AmountPerSecond/duration> <radius>
       default: op
       permission: LetItRain.firerain
    effectrain:
       description: Spawns a rain of animals on selected player (with particle effects)
-      usage: /<command> <effect> <creature> <player> <amount> <radius>
+      usage: /<command> <entity|item|hand> <player|coord name> <amount|duration|AmountPerSecond/duration> <radius> [effect]
       default: op
       permission: LetItRain.firerain
    strike:
-      description: Kill a player by striking it with lightning
+      description: Kill a player by striking with lightning
       usage: /<command> <player>
       default: op
       permission: LetItRain.strike
@@ -35,27 +35,30 @@ commands:
       default: op
       permission: LetItRain.launcher
    removeItems:
-      description: removes drops from the rain command
-      usage: /<command> <radius>
+      description: Removes drops from the rain command
+      usage: /<command> <radius> <x> <y> <z> <world>
       default: op
       permission: LetItRain.removeItems
    slaughter:
-      description: kill nearby animals
-      usage: /<command> <radius>
+      description: Kill nearby animals
+      usage: /<command> <radius> <x> <y> <z> <world>
       default: op
       permission: LetItRain.slaughter
    letitrain:
-      description: displays helps
+      description: displays helps and reload
       usage: /<command>
 permissions:
     LetItRain.*:
         description: Gives access to all LetItRain commands
         children:
             LetItRain.rain: true
+            LetItRain.rain.lightning: true
             LetItRain.rain.coordinates: false
             LetItRain.firerain: true
             LetItRain.zeus: true
+            LetItRain.zeus.bypass: true
             LetItRain.strike: true
             LetItRain.launcher: true
             LetItRain.slaughter: true
             LetItRain.removeItems: true
+            LetItRain.reload: true

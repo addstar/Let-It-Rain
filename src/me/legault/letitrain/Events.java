@@ -2,11 +2,13 @@ package me.legault.letitrain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,19 +19,20 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.material.Dispenser;
 import org.bukkit.util.Vector;
 
 public class Events implements Listener{
 	
-	private static java.util.List<BlockFace> faces = Arrays.asList(new BlockFace[] {
+	private static List<Player> waitP = new ArrayList<Player>();	
+	private static List<BlockFace> faces = Arrays.asList(new BlockFace[] {
             BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN, BlockFace.SELF
         });
 	
@@ -95,7 +98,8 @@ public class Events implements Listener{
 	private LinkedList<Entity> snows = new LinkedList<Entity>();
 	
 	
-	@EventHandler
+	@SuppressWarnings("deprecation")
+	@EventHandler(priority = EventPriority.LOW)
     public void interact(PlayerInteractEvent event) {
 		
 		if (event.getPlayer().getItemInHand().getTypeId() == LetItRain.item && event.getPlayer().hasPermission("LetItRain.launcher")){
@@ -107,19 +111,45 @@ public class Events implements Listener{
 		}else if(event.getPlayer().getItemInHand().getTypeId() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
 			
 			Player player = event.getPlayer();
-			Location location = player.getLocation();
-			location.setY(800);
-			 
-			World world = player.getWorld();
-			world.createExplosion(location, LetItRain.dLightningPower);
-			world.strikeLightning(location);
-			
+			Location location = player.getTargetBlock((HashSet<Byte>)null, 800).getLocation();
+
+			strikeWait(player, location);
 		}
     }
 	
+	private static void StrikeRain(Player player, Location location){		
+		World world = player.getWorld();
+		world.createExplosion(location, LetItRain.dLightningPower);
+		world.strikeLightning(location);
+		if (LetItRain.usingZeus){
+			LetItRain.plugin.getServer().getConsoleSender().sendMessage("Using Lightning: "+player.getName());
+		}
+	}
+	
+	private static void strikeWait(final Player player, final Location location){
+		if (player.hasPermission("LetItRain.zeus.bypass")){
+			StrikeRain(player, location);	
+			return;
+		}
+		if (!waitP.contains(player)){
+			StrikeRain(player, location);
+			waitP.add(player);
+    		Bukkit.getScheduler().scheduleSyncDelayedTask(LetItRain.plugin, new Runnable(){
+    			@Override
+    			public void run() {    					
+    				if (waitP.contains(player)){
+    					waitP.remove(player);
+    				}
+    			}    		
+        	}, LetItRain.Zeusdelay*20);
+    	} else {
+    		Resources.privateMsg(player, LetItRain.ZeusWait);
+    	}
+	}
+	
 	@EventHandler
 	public void dispenser(BlockDispenseEvent event){
-		if(event.getBlock().getType() == Material.DISPENSER && event.getItem().getType() == Material.SNOW_BALL && LetItRain.dispenserWorksWithFireSnowballs){
+		if(event.getBlock().getType().equals(Material.DISPENSER) && event.getItem().getType().equals(Material.SNOW_BALL) && LetItRain.dispenserWorksWithFireSnowballs){
 			
 			event.setCancelled(true);
 			
@@ -137,4 +167,6 @@ public class Events implements Listener{
 			snows.add(snowball);
 		}
 	}
+
+
 }
