@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.legault</groupId>
 	<artifactId>LetItRain</artifactId>
-	<version>4.2-b${env.BUILD_NUMBER}</version>
+	<version>4.5-b${env.BUILD_NUMBER}</version>
 	<name>LetItRain</name>
 	<description>Bukkit plugin to unleash rain of entities and items</description>
 
