@@ -37,10 +37,11 @@ public class LetItRainHelp implements CommandExecutor{
 			Resources.privateMsg(sender, "/effectrain <entity|item|hand> <amount|duration|amountPerSec/duration> <radius> <player|coordinate name> [effect]");
 			Resources.privateMsg(sender, "/letitrain effects - See valid effect names");
 			Resources.privateMsg(sender, "/letitrain reload - Reload the config");
-			Resources.privateMsg(sender, "/rain lightning <amount|duration> <radius> <player|coordinate name>");
+			Resources.privateMsg(sender, "/rain lightning <amount|duration> <radius> <player|coordinate name> - Spark lightning");
+			Resources.privateMsg(sender, "/rain lightningexplode <amount|duration> <radius> <player|coordinate name> - Spark lightning that explodes and breaks blocks");
 			Resources.privateMsg(sender, "/rain add <coordinate name> - Add a named coordinate");
 			Resources.privateMsg(sender, "/rain remove <coordinate name> - Remove a named coordinate");
-			Resources.privateMsg(sender, "/zeus - Give nether star; right click for lightning");
+			Resources.privateMsg(sender, "/zeus - Give nether star; right click for lightning (destructive, breaks blocks)");
 			Resources.privateMsg(sender, "/strike <player> - Kill the player");
 			Resources.privateMsg(sender, "/launcher");
 			Resources.privateMsg(sender, "/slaughter <radius> <x> <y> <z> <world> - Kill mobs around player or at world location");

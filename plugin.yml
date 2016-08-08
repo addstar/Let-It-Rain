@@ -4,7 +4,7 @@ version: 4.5.4
 
 commands:
    zeus:
-      description: Generates a lightning bolt on the pointer
+      description: Generates a lightning bolt on the pointer (destructive, breaks blocks)
       usage: /<command>
       default: op
       permission: LetItRain.zeus

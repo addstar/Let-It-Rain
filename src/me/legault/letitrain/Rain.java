@@ -64,6 +64,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		EntityType entityToDrop = null;
 		PotionType potion = null;
 		boolean isLightning = false;
+		boolean lightningExplosion = false;
 		ItemStack stack = new ItemStack(Material.AIR);
 		Particle effectType = Particle.FIREWORKS_SPARK;
 
@@ -89,6 +90,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		//   rain lightning 4 20		            // Spark lightning 4 times around the current player (2 per second), radius 20
 		//   rain lightning 5s 20		            // Spark lightning around the current player for 5 seconds (1 per second), radius 20
 		//   rain lightning playerName 5s 10		// Spark lightning around the named player for 5 seconds, radius 10
+		//   rain lightningexplode 4 20		        // Spark explosive (destructive) lightning 4 times around the current player (2 per second), radius 20
 		//   rain zeus playerName 5s 10				// Same as previous command
 
 		//   effectrain diamond playerName 5s 20 explosion_normal		// Use effect explosion_norml when dropping items
@@ -123,22 +125,25 @@ public class Rain implements CommandExecutor, TabCompleter{
 			displayHelp(label, sender, useParticleEffects);
 			return true;
 		}
-		
+
 		// Help
 		if (args[0].equalsIgnoreCase("help")){
 			displayHelp(label, sender, useParticleEffects);
 			return true;
 		}
-		
+
 		// Check if the user tries to add/remove a command
 		if(args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("delete"))
 			return addRemoveCoordinates(sender, args);
 
-		if (args[0].equalsIgnoreCase("lightning") || args[0].equalsIgnoreCase("zeus")){
+		if (args[0].equalsIgnoreCase("lightning") || args[0].equalsIgnoreCase("zeus") || args[0].equalsIgnoreCase("lightningexplode")){
 			if (!sender.isOp() && !sender.hasPermission("LetItRain.rain.lightning")){
 				return true;
 			}
 			isLightning = true;
+			if (args[0].equalsIgnoreCase("lightningexplode")) {
+				lightningExplosion = true;
+			}
 			amount = LetItRain.defLightAmount;
 		} else {
 
@@ -351,6 +356,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		final EntityType fEntityToDrop = entityToDrop;
 		final boolean fIsOnFire = isOnFire;
 		final boolean fisLightning = isLightning;
+		final boolean flightningExplosion = lightningExplosion;
 		final boolean fUseParticleEffects = useParticleEffects;
 		final Particle fEffectType = effectType;
 
@@ -391,7 +397,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 				@Override
 				public void run() {
 					if(!spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmountPerSecond, fRadius,
-							fIsOnFire, fisLightning, fUseParticleEffects, fEffectType) ||
+							fIsOnFire, fisLightning, flightningExplosion, fUseParticleEffects, fEffectType) ||
 							System.currentTimeMillis() - initTime > Math.max(fAmount * 1000 - TIME_DELAY_SECONDS * 1000, 1000))
 					StopScheduler(myTaskIdentifier);
 				}
@@ -408,7 +414,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 				@Override
 				public void run() {
 					spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmount, fRadius,
-							fIsOnFire, fisLightning, false, fEffectType);
+							fIsOnFire, fisLightning, flightningExplosion, false, fEffectType);
 				}				
 			}, 0L,  10); // 2 lightning strikes per 1 second
 			runningTasks.put(myTaskIdentifier, id);
@@ -429,7 +435,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 			log.info("Dropping " + amount + " " + itemDescription + " over a radius of " + radius + effectDescription);
 
 			boolean res = spawnEntities(targetLocation, fEntityToDrop, sender, fStack, fPotion, amount, radius,
-					fIsOnFire, isLightning, useParticleEffects, effectType);
+					fIsOnFire, isLightning, lightningExplosion, useParticleEffects, effectType);
 			if(!res)
 				return true;
 		}
@@ -491,7 +497,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 	}
 
 	private static boolean spawnEntities(Location location, EntityType entityType, CommandSender sender, ItemStack stack,
-					PotionType potionType, int amount, int radius, boolean isOnFire, boolean isLightning,
+					PotionType potionType, int amount, int radius, boolean isOnFire, boolean isLightning, boolean lightningExplosion,
 					boolean useParticleEffects, Particle effectType){
 		
 		Location newLoc;
@@ -502,7 +508,8 @@ public class Rain implements CommandExecutor, TabCompleter{
 			
 			World world = location.getWorld();
 			newLoc = world.getHighestBlockAt(newLoc.clone()).getLocation();
-			world.createExplosion(newLoc, LetItRain.dLightningPower);
+			if (lightningExplosion)
+				world.createExplosion(newLoc, LetItRain.dLightningPower);
 			world.strikeLightning(newLoc);
 			return true;
 		}
@@ -739,6 +746,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		Resources.privateMsg(sender, "Alternatives: /rain | /firerain | /effectrain");
 		Resources.privateMsg(sender, "  Specify strength potion with: /rain potion:strength");
 		Resources.privateMsg(sender, "  Lightning strike with: /rain lightning");
+		Resources.privateMsg(sender, "  Destructive lightning strike with: /rain lightningexplode");
 		Resources.privateMsg(sender, "  Custom drops: xporb, fireball, dragon_fireball, TNTPrimed, area_effect_cloud");
 	}
 	
