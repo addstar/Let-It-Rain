@@ -32,9 +32,7 @@ import org.bukkit.util.Vector;
 public class Events implements Listener{
 	
 	private static List<Player> waitP = new ArrayList<Player>();	
-	private static List<BlockFace> faces = Arrays.asList(new BlockFace[] {
-            BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN, BlockFace.SELF
-        });
+	private static List<BlockFace> faces = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN, BlockFace.SELF);
 	
 	
 	@EventHandler
@@ -111,7 +109,7 @@ public class Events implements Listener{
 		}else if(event.getPlayer().getItemInHand().getTypeId() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
 			
 			Player player = event.getPlayer();
-			Location location = player.getTargetBlock((HashSet<Byte>)null, 800).getLocation();
+			Location location = player.getTargetBlock(null, 800).getLocation();
 
 			strikeWait(player, location);
 		}

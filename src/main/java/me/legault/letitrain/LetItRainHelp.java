@@ -11,8 +11,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import au.com.addstar.monolith.effects.EffectParticle;
-
 public class LetItRainHelp implements CommandExecutor{
 	
 	public LetItRainHelp(LetItRain plugin){}

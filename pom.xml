@@ -3,10 +3,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.legault</groupId>
 	<artifactId>LetItRain</artifactId>
-	<version>4.5-b${env.BUILD_NUMBER}</version>
+	<version>4.5</version>
 	<name>LetItRain</name>
 	<description>Bukkit plugin to unleash rain of entities and items</description>
-
+	<properties>
+		<plugin.version>${project.version}-${build.number}</plugin.version>
+		<build.number/>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 	<repositories>
 		<!-- For spigot -->
 		<repository>
@@ -53,19 +57,14 @@
 		<!-- We use Spigot now, not Bukkit -->
 		<dependency>
 			<groupId>org.spigotmc</groupId>
-			<artifactId>spigot</artifactId>
-			<version>1.10-R0.1-SNAPSHOT</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.spigotmc</groupId>
-					<artifactId>sneaky-throw</artifactId>
-				</exclusion>
-			</exclusions>
+			<artifactId>spigot-api</artifactId>
+			<version>1.12.2-R0.1-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>au.com.addstar</groupId>
 				<artifactId>Monolith</artifactId>
-				<version>1.4.4-SNAPSHOT</version>
+				<version>1.4.7-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.spigotmc</groupId>
@@ -73,13 +72,18 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.5</version>
+		</dependency>
 	</dependencies>
+		<build>
 
-	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
-				<targetPath>.</targetPath>
+				<targetPath>src/main/resources</targetPath>
 				<filtering>true</filtering>
 				<directory>${basedir}/.</directory>
 				<includes>
@@ -93,8 +97,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 		</plugins>
