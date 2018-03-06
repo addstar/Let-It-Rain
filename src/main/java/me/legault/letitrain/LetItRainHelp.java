@@ -19,7 +19,7 @@ public class LetItRainHelp implements CommandExecutor{
 		if ((args.length > 0) && (args[0].equals("effects"))) {
 			// Command: /letitrain effects
 			sender.sendMessage(ChatColor.GREEN + "Possible particle effect names:");
-			ArrayList<String> effects = new ArrayList<String>();
+			ArrayList<String> effects = new ArrayList<>();
 			for (Particle e : org.bukkit.Particle.values()) {
 				effects.add(e.toString());
 			}

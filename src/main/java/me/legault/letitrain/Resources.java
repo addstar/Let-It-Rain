@@ -43,7 +43,7 @@ public class Resources {
 	public static void privateMsg(CommandSender sender, String msg){
 		if (sender != null){
 			if (sender instanceof Player)
-				((Player)sender).sendMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
+				sender.sendMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
 			else
 				sender.sendMessage(msg);
 		}

@@ -62,17 +62,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>au.com.addstar</groupId>
-				<artifactId>Monolith</artifactId>
-				<version>1.4.7-SNAPSHOT</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.spigotmc</groupId>
-					<artifactId>spigot</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.5</version>

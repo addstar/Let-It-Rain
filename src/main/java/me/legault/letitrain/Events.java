@@ -2,7 +2,6 @@ package me.legault.letitrain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +30,7 @@ import org.bukkit.util.Vector;
 
 public class Events implements Listener{
 	
-	private static List<Player> waitP = new ArrayList<Player>();	
+	private static List<Player> waitP = new ArrayList<>();
 	private static List<BlockFace> faces = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN, BlockFace.SELF);
 	
 	
@@ -66,15 +65,13 @@ public class Events implements Listener{
         	target.getRelative(BlockFace.UP).setType(Material.FIRE);
         	
         	if (LetItRain.destructiveArrows){
-	        	for(Iterator<BlockFace> iterator = faces.iterator(); iterator.hasNext();)
-	            {
-	                BlockFace blockFace = (BlockFace)iterator.next();
-	                Block t = target.getRelative(blockFace);
-	                
-	                //if (rdm.nextFloat() < 0.25f){
-		                t.setType(Material.FIRE);
-	                //}
-	            }
+				for (BlockFace blockFace : faces) {
+					Block t = target.getRelative(blockFace);
+
+					//if (rdm.nextFloat() < 0.25f){
+					t.setType(Material.FIRE);
+					//}
+				}
         	}
 				
 		}
@@ -93,7 +90,7 @@ public class Events implements Listener{
     }
 	
 	
-	private LinkedList<Entity> snows = new LinkedList<Entity>();
+	private LinkedList<Entity> snows = new LinkedList<>();
 	
 	
 	@SuppressWarnings("deprecation")

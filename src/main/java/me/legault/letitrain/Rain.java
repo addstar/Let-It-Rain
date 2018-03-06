@@ -35,19 +35,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Shulker;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.Potion;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
-import au.com.addstar.monolith.StringTranslator;
-import au.com.addstar.monolith.lookup.Lookup;
-import au.com.addstar.monolith.lookup.MaterialDefinition;
 
-@SuppressWarnings("deprecation")
 public class Rain implements CommandExecutor, TabCompleter{
 	
-	public static HashMap<Entity, Boolean> thrownedItems = new HashMap<Entity, Boolean>();
-	public static HashMap<Integer, Integer> runningTasks = new HashMap<Integer, Integer>();
+	public static HashMap<Entity, Boolean> thrownedItems = new HashMap<>();
+	public static HashMap<Integer, Integer> runningTasks = new HashMap<>();
 	public static AtomicInteger taskIdentifier = new AtomicInteger(Integer.MIN_VALUE);
 	public static Random randomGen = new Random();
 
@@ -161,12 +160,9 @@ public class Rain implements CommandExecutor, TabCompleter{
 		}
 
 		if (!isLightning && potion == null && entityToDrop == null && LetItRain.rainBlocks){
-			if (args[0].equalsIgnoreCase("hand") && sender instanceof Player && ((Player)sender).getItemInHand() != null && !((Player)sender).getItemInHand().getType().equals(Material.AIR)){
-				stack = ((Player)sender).getItemInHand();
+			if (args[0].equalsIgnoreCase("hand") && sender instanceof Player && ((Player)sender).getEquipment().getItemInMainHand() != null && !((Player)sender).getEquipment().getItemInMainHand().getType().equals(Material.AIR)){
+				stack = ((Player)sender).getEquipment().getItemInMainHand();
 			} else {
-
-				// Method 1: check Material enum
-				if (false) {
 					Material mat = findMaterial(args[0]);
 
 					if (mat == null || mat == Material.AIR) {
@@ -180,16 +176,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 						//mat = findMaterial(args[0].split(":")[0]);
 						//matID = Integer.parseInt(args[0].split(":")[1]);
 					}
-				} else {
-					// Method 2: use Monolith
-					MaterialDefinition itemDef = getItem(args[0]);
-					if (itemDef == null) {
-						Resources.privateMsg(sender, ChatColor.RED + "Item to drop is not a recognized material: " + args[0]);
-						return true;
-					}
-
-					stack = itemDef.asItemStack(1);
-				}
 			}						
 		}		
 
@@ -277,7 +263,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 						radius = holder;
 					}
 				}
-			} catch(NumberFormatException e){}
+			} catch(NumberFormatException ignored){}
 		}
 		
 		//Parameter not recognized
@@ -449,7 +435,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		else if(isLightning)
 			name = "Lightning";
 		else
-			name = StringTranslator.getName(stack);
+			name = stack.getType().getDeclaringClass().getSimpleName();
 
 		name = name.replaceAll("_", " ").toLowerCase();
 		
@@ -514,7 +500,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 			return true;
 		}
 
-		List<Location> locs = new ArrayList<Location>();
+		List<Location> locs = new ArrayList<>();
 
 		try{
 			//Spawn entity
@@ -539,7 +525,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 						((DragonFireball)creature).setDirection(new Vector(0, -1, 0));
 					}						
 					if (entityType.name().equalsIgnoreCase("SHULKER")){
-						moveDownCreature((Shulker)creature);							
+						moveDownCreature(creature);
 					}					
 						
 					if (creature instanceof Fireball){
@@ -557,9 +543,13 @@ public class Rain implements CommandExecutor, TabCompleter{
 				} else {
 
 					if(potionType != null){
-						stack = new Potion(potionType).toItemStack(1);
+						Material mat  = Material.POTION ;
+						stack = new ItemStack(mat);
+						PotionMeta meta = (PotionMeta) stack.getItemMeta();
+						PotionData newData = new PotionData(potionType);
+						meta.setBasePotionData(newData);
+						stack.setItemMeta(meta);
 					}
-					
 					location.getWorld().dropItem(newLoc, stack);
 				}
 			}
@@ -610,7 +600,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 			}
 		}, 1L, interval);
 		runningTasks.put(myTaskIdentifier, id);
-		return;
 	}
 	
 	private static void moveDownCreature(final Entity creature){
@@ -649,58 +638,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 		}
 		return null;
 	}
-	
-	private MaterialDefinition getItem(String search)
-	{
-		// Get item value + data value
-		String[] parts = search.split(":");
-		String itemname = parts[0];
-		MaterialDefinition def = getMaterial(itemname);
-		if (def == null) return null;
-		
-		if(search.contains(":")) {
-			String dpart = search.split(":")[1];
-			try {
-				short data = Short.parseShort(dpart);
-				if(data < 0)
-					throw new IllegalArgumentException("Data value for " + itemname + " cannot be less than 0");
-
-				// Return new definition with specified data value
-				return new MaterialDefinition(def.getMaterial(), data);
-			}
-			catch(NumberFormatException e) {
-				throw new IllegalArgumentException("Data value after " + itemname);
-			}
-		} else {
-			return def;
-		}
-	}
-	
-	@SuppressWarnings( "deprecation" )
-    private MaterialDefinition getMaterial(String name)
-	{
-		// Bukkit name
-		Material mat = Material.getMaterial(name.toUpperCase());
-		if (mat != null)
-			return new MaterialDefinition(mat, (short)0);
-		
-		// Id
-		try
-		{
-			short id = Short.parseShort(name);
-			mat = Material.getMaterial(id);
-		}
-		catch(NumberFormatException e)
-		{
-		}
-		
-		if(mat != null)
-			return new MaterialDefinition(mat, (short)0);
-
-		// ItemDB
-		return Lookup.findItemByName(name);
-	}
-
 
 	private Material findMaterial(String token){
 		
@@ -868,20 +805,16 @@ public class Rain implements CommandExecutor, TabCompleter{
 
 	@Override
 	public List<String> onTabComplete(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
-		SortedSet<String> tab = new TreeSet<String>();  
-		List<String> tabsort = new ArrayList<String>(); 
-		
+		SortedSet<String> tab = new TreeSet<>();
+
 		if (arg3.length == 1){
-			Iterator<EntityType> it = LetItRain.defaultBlackList.iterator();
-			while (it.hasNext()){
-				EntityType type = it.next();
+			for (EntityType type : LetItRain.defaultBlackList) {
 				String name = type.getEntityClass().getSimpleName();
-				if (name.toLowerCase().startsWith(arg3[0].toLowerCase()) && !LetItRain.config.getBoolean("LetItRain.Rain.Blacklist."+name)){
+				if (name.toLowerCase().startsWith(arg3[0].toLowerCase()) && !LetItRain.config.getBoolean("LetItRain.Rain.Blacklist." + name)) {
 					tab.add(name);
 				}
 			}			
 		}
-		tabsort.addAll(tab);
-		return tabsort;
+		return new ArrayList<>(tab);
 	}
 }

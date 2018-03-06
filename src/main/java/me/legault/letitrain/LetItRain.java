@@ -8,13 +8,8 @@
 
 package me.legault.letitrain;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -51,12 +46,6 @@ public class LetItRain extends JavaPlugin{
 	public static boolean usingZeus, dRemoveArtifact, destructiveArrows, checkForUpdate, rainBlocks, rainPotions, rainLava, rainWater, dispenserWorksWithFireSnowballs;
 	public static String rainLightnings, ZeusWait, dPunishMsg, dZeusMsg, dGrenadeMsg, dRainMsg, dFirerainMsg;
 	public static int item, itemZeus;
-	private Rain rainExec;
-	private Zeus zeusExec;
-	private Punish punishExec;
-	private Launcher launcherExec;
-	private RemoveItemsnSlaughter removeItems;
-	private LetItRainHelp lirh;
 	public static int version;
 	
 	public static List<EntityType> defaultBlackList;
@@ -72,7 +61,7 @@ public class LetItRain extends JavaPlugin{
 		
 		version = getBukkitVersion();
 		//Sets blacklist
-		defaultBlackList = new ArrayList<EntityType>();
+		defaultBlackList = new ArrayList<>();
 		defaultBlackList.add(EntityType.ENDER_DRAGON);
 		defaultBlackList.add(EntityType.ENDERMAN);
 		defaultBlackList.add(EntityType.BLAZE);
@@ -87,26 +76,26 @@ public class LetItRain extends JavaPlugin{
 		
 		extractCoordinates();
 		createConfig();
-		
-		rainExec = new Rain();
+
+		Rain rainExec = new Rain();
 		getCommand("rain").setExecutor(rainExec);
 		getCommand("firerain").setExecutor(rainExec);
 		getCommand("effectrain").setExecutor(rainExec);
-		
-		zeusExec = new Zeus(this);
+
+		Zeus zeusExec = new Zeus(this);
 		getCommand("zeus").setExecutor(zeusExec);
-		
-		punishExec = new Punish(this);
+
+		Punish punishExec = new Punish(this);
 		getCommand("strike").setExecutor(punishExec);
-		
-		launcherExec = new Launcher(this);
+
+		Launcher launcherExec = new Launcher(this);
 		getCommand("launcher").setExecutor(launcherExec);
-		
-		removeItems = new RemoveItemsnSlaughter(this);
+
+		RemoveItemsnSlaughter removeItems = new RemoveItemsnSlaughter(this);
 		getCommand("removeItems").setExecutor(removeItems);
 		getCommand("slaughter").setExecutor(removeItems);
-		
-		lirh = new LetItRainHelp(this);
+
+		LetItRainHelp lirh = new LetItRainHelp(this);
 		getCommand("letitrain").setExecutor(lirh);
 		
 		log.info(Resources.getPluginTitle() + " enabled");
@@ -125,14 +114,14 @@ public class LetItRain extends JavaPlugin{
 		int lesserVersion = 0;
 		try {
 			lesserVersion = Integer.parseInt(version[2]);
-		} catch (NumberFormatException ex){				
+		} catch (NumberFormatException ignored){
 		}
 		return Integer.parseInt((version[0]+version[1]).substring(1)+lesserVersion);
     }
     
 	private void extractCoordinates(){
 		File coordFile = new File("plugins" + File.separator + "LetItRain" + File.separator + "coordinates.yml");
-		coordinates = new LinkedList<Coordinate>();
+		coordinates = new LinkedList<>();
 		coords = YamlConfiguration.loadConfiguration(coordFile);
 		
 		coords.options().header(
@@ -280,12 +269,12 @@ public class LetItRain extends JavaPlugin{
 		}
 
 		//Put the entities in alphabetical order
-		Map<String, Boolean> entityNames = new HashMap<String, Boolean>();
+		Map<String, Boolean> entityNames = new HashMap<>();
 		for(EntityType e: EntityType.values()){
 			if (e.isSpawnable() && !config.contains("LetItRain.Rain.Blacklist." + e.getEntityClass().getSimpleName()))
 				entityNames.put(e.getEntityClass().getSimpleName(), defaultBlackList.contains(e));
 		}
-		SortedSet<String> keys = new TreeSet<String>(entityNames.keySet());
+		SortedSet<String> keys = new TreeSet<>(entityNames.keySet());
 		for(String key: keys){
 			Boolean isBlacklisted = entityNames.get(key);
 			config.set("LetItRain.Rain.Blacklist." + key, isBlacklisted);
