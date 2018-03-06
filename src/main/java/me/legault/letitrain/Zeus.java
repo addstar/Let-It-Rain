@@ -2,7 +2,6 @@ package me.legault.letitrain;
 
 import java.util.regex.Pattern;
 
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -14,25 +13,27 @@ public class Zeus implements CommandExecutor{
 	
 	public Zeus(LetItRain plugin){}
 	
-	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command cmd, String label,  String[] args){
 		
 		Player player = null;
 		if (!(sender instanceof Player))
 			Resources.privateMsg(sender, "Only a player can execute this command");
 		else{
+			player = (Player) sender;
 			//Permissions
 			if (!sender.hasPermission("LetItRain.zeus"))
 				return true;
-			
-			
-			player = (Player)sender;
+			if(args.length > 0){
+				switch (args[0]){
+					case "set":
+						LetItRain.config.zeusMaterial = player.getEquipment().getItemInMainHand().getType();
+				}
+			}
 			PlayerInventory inv = player.getInventory();
-			Material mat = Material.getMaterial(LetItRain.itemZeus);
-			ItemStack item = new ItemStack(mat);
-			if (!inv.contains(mat) && inv.firstEmpty() != -1){                	
+			ItemStack item = new ItemStack(LetItRain.config.zeusMaterial);
+			if (!inv.contains(LetItRain.config.zeusMaterial) && inv.firstEmpty() != -1){
 				inv.addItem(item);
-				String outputMsg = LetItRain.dZeusMsg;
+				String outputMsg = LetItRain.config.dZeusMsg;
 				outputMsg = outputMsg.replaceAll(Pattern.quote("[player]"), player.getName());
 				if(!outputMsg.isEmpty()){
 					Resources.broadcast(outputMsg);

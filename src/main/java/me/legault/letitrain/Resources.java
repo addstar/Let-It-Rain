@@ -13,26 +13,10 @@ public class Resources {
 		return LetItRain.plugin.getDescription().getFullName();
 	}
 
-	@SuppressWarnings("deprecation")
 	public static EntityType getEntityType(String identifier){
-		EntityType e;
-		try{
-			int i = Integer.parseInt(identifier);
-			try{
-				e = EntityType.fromId(i);
-			}catch(Exception f){
-				return null;
-			}
-		}catch(Exception f){
-			try{
-				e = EntityType.fromName(identifier);
-			}catch(Exception g){
-				return null;
-			}
+		for(EntityType type: EntityType.values()){
+			if(type.getEntityClass().getSimpleName().equalsIgnoreCase(identifier) && type.isSpawnable())return type;
 		}
-		
-		if (e.isSpawnable())
-			return e;
 		return null;
 	}
 	
@@ -43,7 +27,7 @@ public class Resources {
 	public static void privateMsg(CommandSender sender, String msg){
 		if (sender != null){
 			if (sender instanceof Player)
-				((Player)sender).sendMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
+				sender.sendMessage(msgColor + ChatColor.translateAlternateColorCodes('&', msg));
 			else
 				sender.sendMessage(msg);
 		}

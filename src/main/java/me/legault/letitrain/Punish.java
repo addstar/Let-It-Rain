@@ -18,7 +18,7 @@ public class Punish implements CommandExecutor{
 		
 		World world;
 		Player target;
-		String outputMsg = LetItRain.dPunishMsg;
+		String outputMsg = LetItRain.config.dPunishMsg;
 		
 		if (args != null && args.length > 0)
 			target = Resources.isPlayer(args[0]);

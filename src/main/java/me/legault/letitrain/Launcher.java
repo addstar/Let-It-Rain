@@ -18,8 +18,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 public class Launcher implements CommandExecutor{
-	
-	public Launcher(LetItRain plugin){}
+
+	public Configuration config;
+
+	public Launcher(){
+		this.config = LetItRain.config;
+	}
 	
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command cmd, String label,  String[] args){
@@ -36,9 +40,9 @@ public class Launcher implements CommandExecutor{
 			player = (Player)sender;
 			PlayerInventory inventory = player.getInventory();
 			
-			inventory.addItem(new ItemStack(LetItRain.item));
+			inventory.addItem(new ItemStack(config.launcherMaterial));
 			
-			String outputMsg = LetItRain.dGrenadeMsg;
+			String outputMsg = config.dGrenadeMsg;
 			outputMsg = outputMsg.replaceAll(Pattern.quote("[player]"), player.getName());
 			if(!outputMsg.isEmpty())
 				Resources.broadcast(outputMsg);

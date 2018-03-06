@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.legault</groupId>
 	<artifactId>LetItRain</artifactId>
-	<version>4.5.4</version>
+	<version>5.0-ALPHA</version>
 	<name>LetItRain</name>
 	<description>Bukkit plugin to unleash rain of entities and items</description>
 	<properties>
@@ -11,6 +11,7 @@
 		<build.number/>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+    <url>https://www.github.com/AddstarMC/let-it-rain</url>
 	<repositories>
 		<!-- For spigot -->
 		<repository>

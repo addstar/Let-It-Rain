@@ -1,15 +1,7 @@
 package me.legault.letitrain;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -24,18 +16,16 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Shulker;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.Potion;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
@@ -43,22 +33,36 @@ import au.com.addstar.monolith.StringTranslator;
 import au.com.addstar.monolith.lookup.Lookup;
 import au.com.addstar.monolith.lookup.MaterialDefinition;
 
-@SuppressWarnings("deprecation")
 public class Rain implements CommandExecutor, TabCompleter{
 	
-	public static HashMap<Entity, Boolean> thrownedItems = new HashMap<Entity, Boolean>();
-	public static HashMap<Integer, Integer> runningTasks = new HashMap<Integer, Integer>();
+	public static HashMap<Entity, Boolean> thrownedItems = new HashMap<>();
+	public static HashMap<Integer, Integer> runningTasks = new HashMap<>();
 	public static AtomicInteger taskIdentifier = new AtomicInteger(Integer.MIN_VALUE);
 	public static Random randomGen = new Random();
+
+	private List<String> allowedEntities;
+	private List<String> materials;
+	public Rain() {
+		allowedEntities = new ArrayList<>();
+		for(EntityType type: EntityType.values()){
+			String name =  type.getEntityClass().getSimpleName();
+			if(LetItRain.config.entityBlackListName.contains(name))continue;
+			allowedEntities.add(name);
+		}
+		materials = new ArrayList<>();
+		for(Material mat: Material.values()){
+			materials.add(mat.getClass().getSimpleName());
+		}
+	}
 
 	public boolean onCommand(final CommandSender sender, Command cmd, String label,  String[] args){
 		boolean isAmountInit = false;
 		boolean isTime = false;
 		boolean isOnFire = false;
 		boolean useParticleEffects = false;
-		int amount = LetItRain.dAmount;		// Number of items to drop (default 500); Or, if isTime is true, the length, in seconds, to drop items
+		int amount = LetItRain.config.dAmount;		// Number of items to drop (default 500); Or, if isTime is true, the length, in seconds, to drop items
 		int amountPerSecond = 100;			// Number of items per second to drop; only valid when isTime is true
-		int radius = LetItRain.dRadius;		// Radius to drop items; default 30
+		int radius = LetItRain.config.dRadius;		// Radius to drop items; default 30
 		String targetName = null;
 		Location targetLocation = null;
 		EntityType entityToDrop = null;
@@ -144,11 +148,11 @@ public class Rain implements CommandExecutor, TabCompleter{
 			if (args[0].equalsIgnoreCase("lightningexplode")) {
 				lightningExplosion = true;
 			}
-			amount = LetItRain.defLightAmount;
+			amount = LetItRain.config.defLightAmount;
 		} else {
 
 			// Parse potions
-			if(LetItRain.rainPotions && (args[0].startsWith("potion:") || args[0].startsWith("potions:"))){
+			if(LetItRain.config.rainPotions && (args[0].startsWith("potion:") || args[0].startsWith("potions:"))){
 				if(args[0].startsWith("potion:"))
 					potion = findPotion(args[0].substring("potion:".length()));
 				else
@@ -160,27 +164,16 @@ public class Rain implements CommandExecutor, TabCompleter{
 			}
 		}
 
-		if (!isLightning && potion == null && entityToDrop == null && LetItRain.rainBlocks){
-			if (args[0].equalsIgnoreCase("hand") && sender instanceof Player && ((Player)sender).getItemInHand() != null && !((Player)sender).getItemInHand().getType().equals(Material.AIR)){
-				stack = ((Player)sender).getItemInHand();
+		if (!isLightning && potion == null && entityToDrop == null && LetItRain.config.rainBlocks){
+			if (args[0].equalsIgnoreCase("hand") && sender instanceof Player && ((Player)sender).getInventory().getItemInMainHand() != null && !((Player)sender).getInventory().getItemInMainHand().getType().equals(Material.AIR)){
+				stack = ((Player)sender).getInventory().getItemInMainHand();
 			} else {
 
 				// Method 1: check Material enum
-				if (false) {
-					Material mat = findMaterial(args[0]);
-
-					if (mat == null || mat == Material.AIR) {
-						Resources.privateMsg(sender, ChatColor.RED + "Item to drop is not a recognized material: " + args[0]);
-						return true;
-					}
+				Material mat = Material.getMaterial(toSingular(args[0]).toUpperCase());
+				if (mat != null || mat != Material.AIR) {
 					stack = new ItemStack(mat);
-
-					if (args[0].contains(":")) {
-						stack = new ItemStack(findMaterial(args[0]), 1, (short) Integer.parseInt(args[0].split(":")[1]));
-						//mat = findMaterial(args[0].split(":")[0]);
-						//matID = Integer.parseInt(args[0].split(":")[1]);
-					}
-				} else {
+				}else{
 					// Method 2: use Monolith
 					MaterialDefinition itemDef = getItem(args[0]);
 					if (itemDef == null) {
@@ -195,8 +188,8 @@ public class Rain implements CommandExecutor, TabCompleter{
 
 		// Validate entities/potions
 		if (entityToDrop == null && stack.getType().equals(Material.AIR) && potion == null && !isLightning){
-			Resources.privateMsg(sender, "Please enter a valid entity/material id or name");
-			if (!LetItRain.rainBlocks)
+			Resources.privateMsg(sender, "Please enter a valid entity/material or name");
+			if (!LetItRain.config.rainBlocks)
 				Resources.privateMsg(sender, "Blocks have been disabled ");
 			return true;
 		}
@@ -214,19 +207,9 @@ public class Rain implements CommandExecutor, TabCompleter{
 			if (targetName == null){
 				
 				//Find programmable target
-				Coordinate c = null;
-				for(Coordinate f: LetItRain.coordinates) {
-					if (f.hasName(args[i])) {
-						c = f;
-						break;
-					}
-				}
+				targetLocation = LetItRain.config.coordinates.getOrDefault(args[i],null);
 
-				if(c != null){
-					targetName = args[i];
-					World w = LetItRain.server.getWorld(c.world);
-					targetLocation = new Location(w, c.x, c.y, c.z);
-				}else{
+				if(targetLocation == null){
 					//Find player
 					Player target = Resources.isPlayer(args[i]);
 					if(target != null){
@@ -277,7 +260,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 						radius = holder;
 					}
 				}
-			} catch(NumberFormatException e){}
+			} catch(NumberFormatException ignored){}
 		}
 		
 		//Parameter not recognized
@@ -292,14 +275,14 @@ public class Rain implements CommandExecutor, TabCompleter{
 		if (radius < 1 || amount < 1){
 			Resources.privateMsg(sender, "Send at least one entity with a radius of at least 1");
 			return true;
-		}else if (amount > LetItRain.maxAmount){
-			Resources.privateMsg(sender, "The maximum entities allowed is " + LetItRain.maxAmount + "; " + amount + " is too large");
+		}else if (amount > LetItRain.config.maxAmount){
+			Resources.privateMsg(sender, "The maximum entities allowed is " + LetItRain.config.maxAmount + "; " + amount + " is too large");
 			return true;
 		}
 		
 		//Max radius
-		if(isTime && radius > LetItRain.maxRadius){
-			Resources.privateMsg(sender, "The maximum radius is " + LetItRain.maxRadius + "; " + radius + " is too large");
+		if(isTime && radius > LetItRain.config.maxRadius){
+			Resources.privateMsg(sender, "The maximum radius is " + LetItRain.config.maxRadius + "; " + radius + " is too large");
 			return true;
 		}
 		
@@ -317,7 +300,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		//Test whether the animal is blacklisted
 		if (entityToDrop != null){
 			try{
-				if (LetItRain.config.getBoolean("LetItRain.Rain.Blacklist." + entityToDrop.getEntityClass().getSimpleName())){
+				if (!allowedEntities.contains(entityToDrop.getEntityClass().getSimpleName())){
 					Resources.privateMsg(sender, "The entity you chose has been blacklisted");
 					return true;
 				}
@@ -330,7 +313,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		//Test whether the lava or water is blacklisted
 		if (stack.getType().equals(Material.WATER) || stack.getType().equals(Material.LAVA)){
 			try{
-				if (LetItRain.config.getBoolean("LetItRain.Rain.Blacklist.Lava") || LetItRain.config.getBoolean("LetItRain.Rain.Blacklist.Water")){
+				if (LetItRain.config.rainLava || LetItRain.config.rainWater){
 					Resources.privateMsg(sender, "The item you chose has been blacklisted");
 					return true;
 				}
@@ -360,7 +343,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		final boolean fUseParticleEffects = useParticleEffects;
 		final Particle fEffectType = effectType;
 
-		if((!LetItRain.rainLava && stack.getType().equals(Material.LAVA)) || (!LetItRain.rainWater && stack.getType().equals(Material.WATER))){
+		if((!LetItRain.config.rainLava && stack.getType().equals(Material.LAVA)) || (!LetItRain.config.rainWater && stack.getType().equals(Material.WATER))){
 			// WATER or LAVA
 			Resources.privateMsg(sender, "Do not use water or lava! Bad things happen...");
 
@@ -390,42 +373,25 @@ public class Rain implements CommandExecutor, TabCompleter{
 						"(" + fAmountPerSecond + " items/sec), radius " + fRadius + effectDescription);
 			}
 
-			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable(){
-
-				// TIME based spawning (drop fAmountPerSecond for fAmount seconds)
-
-				@Override
-				public void run() {
-					if(!spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmountPerSecond, fRadius,
-							fIsOnFire, fisLightning, flightningExplosion, fUseParticleEffects, fEffectType) ||
-							System.currentTimeMillis() - initTime > Math.max(fAmount * 1000 - TIME_DELAY_SECONDS * 1000, 1000))
-					StopScheduler(myTaskIdentifier);
-				}
-				
-			}, 0L, 20L); // There are 20 server ticks per second
+			// TIME based spawning (drop fAmountPerSecond for fAmount seconds)
+			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, () -> {
+                if(!spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmountPerSecond, fRadius,
+                        fIsOnFire, fisLightning, flightningExplosion, fUseParticleEffects, fEffectType) ||
+                        System.currentTimeMillis() - initTime > Math.max(fAmount * 1000 - TIME_DELAY_SECONDS * 1000, 1000))
+                StopScheduler(myTaskIdentifier);
+            }, 0L, 20L); // There are 20 server ticks per second
 			runningTasks.put(myTaskIdentifier, id);
 
 		}else if(isLightning){
 
 			log.info(fAmount + " lightning strikes, radius " + fRadius);
 
-			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable(){
-
-				@Override
-				public void run() {
-					spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmount, fRadius,
-							fIsOnFire, fisLightning, flightningExplosion, false, fEffectType);
-				}				
-			}, 0L,  10); // 2 lightning strikes per 1 second
+			int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, () -> spawnEntities(fLocation, fEntityToDrop, sender, fStack, fPotion, fAmount, fRadius,
+                    fIsOnFire, fisLightning, flightningExplosion, false, fEffectType), 0L,  10); // 2 lightning strikes per 1 second
 			runningTasks.put(myTaskIdentifier, id);
 			
 			// Stop after x amount of lightning strikes
-			LetItRain.server.getScheduler().scheduleSyncDelayedTask(LetItRain.plugin, new Runnable(){
-				@Override
-				public void run() {
-					StopScheduler(myTaskIdentifier);
-				}				
-			}, (10*fAmount));
+			LetItRain.server.getScheduler().scheduleSyncDelayedTask(LetItRain.plugin, () -> StopScheduler(myTaskIdentifier), (10*fAmount));
 			
 		}else{
 			// ALL other drops
@@ -467,7 +433,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 			name = toPlural(name);
 
 		if(isLightning){
-			Resources.broadcast(LetItRain.rainLightnings.replace("[player]", targetName));
+			Resources.broadcast(LetItRain.config.rainLightnings.replace("[player]", targetName));
 			return true;
 		}
 		displayMsg(targetName, name, isOnFire);
@@ -509,12 +475,12 @@ public class Rain implements CommandExecutor, TabCompleter{
 			World world = location.getWorld();
 			newLoc = world.getHighestBlockAt(newLoc.clone()).getLocation();
 			if (lightningExplosion)
-				world.createExplosion(newLoc, LetItRain.dLightningPower);
+				world.createExplosion(newLoc, LetItRain.config.dLightningPower);
 			world.strikeLightning(newLoc);
 			return true;
 		}
 
-		List<Location> locs = new ArrayList<Location>();
+		List<Location> locs = new ArrayList<>();
 
 		try{
 			//Spawn entity
@@ -539,7 +505,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 						((DragonFireball)creature).setDirection(new Vector(0, -1, 0));
 					}						
 					if (entityType.name().equalsIgnoreCase("SHULKER")){
-						moveDownCreature((Shulker)creature);							
+						moveDownCreature(creature);
 					}					
 						
 					if (creature instanceof Fireball){
@@ -557,7 +523,13 @@ public class Rain implements CommandExecutor, TabCompleter{
 				} else {
 
 					if(potionType != null){
-						stack = new Potion(potionType).toItemStack(1);
+
+						Material mat  = Material.POTION ;
+						stack = new ItemStack(mat);
+						PotionMeta meta = (PotionMeta) stack.getItemMeta();
+						PotionData newData = new PotionData(potionType);
+						meta.setBasePotionData(newData);
+						stack.setItemMeta(meta);
 					}
 					
 					location.getWorld().dropItem(newLoc, stack);
@@ -610,26 +582,21 @@ public class Rain implements CommandExecutor, TabCompleter{
 			}
 		}, 1L, interval);
 		runningTasks.put(myTaskIdentifier, id);
-		return;
 	}
 	
 	private static void moveDownCreature(final Entity creature){
 		final int taskid = new Random().nextInt();
-		int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, new Runnable(){
+		int id = LetItRain.server.getScheduler().scheduleSyncRepeatingTask(LetItRain.plugin, () -> {
+            Location l = creature.getLocation();
+            Location newl = new Location(l.getWorld(), l.getX(), l.getY()-4, l.getZ());
 
-			@Override
-			public void run() {
-				Location l = creature.getLocation();
-				Location newl = new Location(l.getWorld(), l.getX(), l.getY()-4, l.getZ());
-				
-				if (newl.getY() <= l.getWorld().getHighestBlockAt(l).getLocation().getY()){
-					//creature.teleport(l.getWorld().getHighestBlockAt(l).getLocation());
-					StopScheduler(taskid);
-				} else {
-					creature.teleport(newl);
-				}
-			}				
-		}, 20L, 10L);
+            if (newl.getY() <= l.getWorld().getHighestBlockAt(l).getLocation().getY()){
+                //creature.teleport(l.getWorld().getHighestBlockAt(l).getLocation());
+                StopScheduler(taskid);
+            } else {
+                creature.teleport(newl);
+            }
+        }, 20L, 10L);
 		runningTasks.put(taskid, id);
 	}	
 
@@ -641,7 +608,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		}
 		for(EntityType o: EntityType.values()){
 			String name = o.name() == null ? "": o.name();
-			String simpleName = o.getEntityClass() == null || o.getEntityClass().getSimpleName() == null ? "": o.getEntityClass().getSimpleName();
+			String simpleName = o.getEntityClass() == null ? "": o.getEntityClass().getSimpleName();
 			
 			if(toSingular(simpleName).equalsIgnoreCase(token) ||
 					toSingular(name).equalsIgnoreCase(token))
@@ -690,7 +657,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 			short id = Short.parseShort(name);
 			mat = Material.getMaterial(id);
 		}
-		catch(NumberFormatException e)
+		catch(NumberFormatException ignored)
 		{
 		}
 		
@@ -701,17 +668,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 		return Lookup.findItemByName(name);
 	}
 
-
-	private Material findMaterial(String token){
-		
-		try{
-			int id = Integer.parseInt(token);
-			return Material.getMaterial(id);
-		}catch(NumberFormatException e){	
-			return Material.getMaterial(toSingular(token).toUpperCase());
-		}
-	}
-		
 	private PotionType findPotion(String token){
 		
 		token = token.replaceAll("[(potion|instant)_ ]", "").toLowerCase();
@@ -756,9 +712,9 @@ public class Rain implements CommandExecutor, TabCompleter{
 	private void displayMsg(String target, String animal, boolean isOnFire){
 		String msg;
 		if (isOnFire)
-			msg = LetItRain.dFirerainMsg;
+			msg = LetItRain.config.dFirerainMsg;
 		else
-			msg = LetItRain.dRainMsg;
+			msg = LetItRain.config.dRainMsg;
 		
 		msg = msg.replaceAll(Pattern.quote("[entity]"), animal.toLowerCase());
 		msg = msg.replaceAll(Pattern.quote("[player]"), target);
@@ -819,16 +775,14 @@ public class Rain implements CommandExecutor, TabCompleter{
 	}
 	
 	private static boolean addRemoveCoordinates(CommandSender sender, String[] args){
-		File coordFile = new File("plugins" + File.separator + "LetItRain" + File.separator + "coordinates.yml");
-		FileConfiguration coords = YamlConfiguration.loadConfiguration(coordFile);
-		
+
 		if(!sender.isOp() && !sender.hasPermission("LetItRain.rain.coordinates")){
 			Resources.privateMsg(sender, "You do not have permission to execute this command");
 			return true;
 		}
 		
 		if(args.length != 2){
-			Resources.privateMsg(sender, "/rain add <location_name>");
+			Resources.privateMsg(sender, "/rain <add|delete> <location_name>");
 			return true;
 		}
 		if(isNotPlayer(sender))
@@ -836,24 +790,27 @@ public class Rain implements CommandExecutor, TabCompleter{
 		
 		Player p = (Player) sender;
 		Location l = p.getLocation();
-		
-		if(args[0].equals("add")){
-			if(!LetItRain.coordinates.add(new Coordinate(args[1], p.getWorld().getName(), l.getX(), l.getY(), l.getZ())))
-				Resources.privateMsg(sender, "The command has failed. It is likely that a location with the same name already exists");
-			else
-				coords.set("LetItRain." + p.getWorld().getName() + "." + args[1], l.getX() + " " + l.getY() + " " + l.getZ());
+		Location result;
+		switch (args[0]) {
+			case "add":
+				result = LetItRain.config.coordinates.putIfAbsent(args[1], l);
+				if (result == null)
+					Resources.privateMsg(sender, "The command has failed. It is likely that a location with the same name already exists");
+				else
+					LetItRain.config.saveCoordinates();
 				Resources.privateMsg(sender, "The coordinate has been added");
-		}else{
-			if(coords.get("LetItRain." + p.getWorld().getName() + "." + args[1]) != null){
-				coords.set("LetItRain." + p.getWorld().getName() + "." + args[1], null);
+				break;
+			case "delete":
+				result = LetItRain.config.coordinates.remove(args[1]);
+				if (result == null)
+					Resources.privateMsg(sender, "The command has failed. It is likely that a location with the same name never existed");
+				else
+					LetItRain.config.saveCoordinates();
 				Resources.privateMsg(sender, "The coordinate has been removed");
-			}else
-				Resources.privateMsg(sender, "The coordinate does not exist");
-		}
-		try {
-			coords.save(coordFile);
-		} catch (IOException e) {
-			e.printStackTrace();
+				break;
+			default:
+				Resources.privateMsg(sender, "/rain <add|delete> <location_name>");
+				return false;
 		}
 		return true;
 	}
@@ -868,20 +825,15 @@ public class Rain implements CommandExecutor, TabCompleter{
 
 	@Override
 	public List<String> onTabComplete(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
-		SortedSet<String> tab = new TreeSet<String>();  
-		List<String> tabsort = new ArrayList<String>(); 
-		
+		SortedSet<String> tab = new TreeSet<>();
+
 		if (arg3.length == 1){
-			Iterator<EntityType> it = LetItRain.defaultBlackList.iterator();
-			while (it.hasNext()){
-				EntityType type = it.next();
-				String name = type.getEntityClass().getSimpleName();
-				if (name.toLowerCase().startsWith(arg3[0].toLowerCase()) && !LetItRain.config.getBoolean("LetItRain.Rain.Blacklist."+name)){
-					tab.add(name);
+			for (String type : allowedEntities) {
+				if (type.toLowerCase().startsWith(arg3[0].toLowerCase())) {
+					tab.add(type);
 				}
 			}			
 		}
-		tabsort.addAll(tab);
-		return tabsort;
+		return new ArrayList<>(tab);
 	}
 }

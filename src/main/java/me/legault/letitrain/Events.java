@@ -2,8 +2,6 @@ package me.legault.letitrain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -30,8 +28,10 @@ import org.bukkit.material.Dispenser;
 import org.bukkit.util.Vector;
 
 public class Events implements Listener{
+
+	private static Configuration config = LetItRain.config;
 	
-	private static List<Player> waitP = new ArrayList<Player>();	
+	private static List<Player> waitP = new ArrayList<>();
 	private static List<BlockFace> faces = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN, BlockFace.SELF);
 	
 	
@@ -42,7 +42,7 @@ public class Events implements Listener{
 		if (Rain.thrownedItems.containsKey(event.getEntity())){
 			isOnFire = Rain.thrownedItems.remove(event.getEntity());
 			Entity ent = event.getEntity();
-			if (LetItRain.dRemoveArtifact)
+			if (config.dRemoveArtifact)
 				event.getEntity().remove();
 			if (isOnFire && ent instanceof Snowball)
 				ent.getWorld().createExplosion(ent.getLocation(), 5f);
@@ -65,16 +65,14 @@ public class Events implements Listener{
         	
         	target.getRelative(BlockFace.UP).setType(Material.FIRE);
         	
-        	if (LetItRain.destructiveArrows){
-	        	for(Iterator<BlockFace> iterator = faces.iterator(); iterator.hasNext();)
-	            {
-	                BlockFace blockFace = (BlockFace)iterator.next();
-	                Block t = target.getRelative(blockFace);
-	                
-	                //if (rdm.nextFloat() < 0.25f){
-		                t.setType(Material.FIRE);
-	                //}
-	            }
+        	if (config.destructiveArrows){
+				for (BlockFace blockFace : faces) {
+					Block t = target.getRelative(blockFace);
+
+					//if (rdm.nextFloat() < 0.25f){
+					t.setType(Material.FIRE);
+					//}
+				}
         	}
 				
 		}
@@ -86,27 +84,26 @@ public class Events implements Listener{
 	
 	@EventHandler
 	public void spawn(EntityDeathEvent event) {
-		if (LetItRain.dRemoveArtifact && Rain.thrownedItems.containsKey(event.getEntity()))
+		if (config.dRemoveArtifact && Rain.thrownedItems.containsKey(event.getEntity()))
 			event.getDrops().removeAll(event.getDrops());
 			
 		Rain.thrownedItems.remove(event.getEntity());
     }
 	
 	
-	private LinkedList<Entity> snows = new LinkedList<Entity>();
+	private LinkedList<Entity> snows = new LinkedList<>();
 	
 	
-	@SuppressWarnings("deprecation")
 	@EventHandler(priority = EventPriority.LOW)
     public void interact(PlayerInteractEvent event) {
 		
-		if (event.getPlayer().getItemInHand().getTypeId() == LetItRain.item && event.getPlayer().hasPermission("LetItRain.launcher")){
+		if (event.getPlayer().getEquipment().getItemInMainHand().getType() == config.launcherMaterial && event.getPlayer().hasPermission("LetItRain.launcher")){
 			
 			Entity snow = event.getPlayer().launchProjectile(Snowball.class);
 			snow.setFireTicks(1000);
 			snows.add(snow);
 			
-		}else if(event.getPlayer().getItemInHand().getTypeId() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
+		}else if(event.getPlayer().getEquipment().getItemInMainHand().getType() == config.zeusMaterial && event.getPlayer().hasPermission("LetItRain.zeus")){
 			
 			Player player = event.getPlayer();
 			Location location = player.getTargetBlock(null, 800).getLocation();
@@ -117,9 +114,9 @@ public class Events implements Listener{
 	
 	private static void StrikeRain(Player player, Location location){		
 		World world = player.getWorld();
-		world.createExplosion(location, LetItRain.dLightningPower);
+		world.createExplosion(location, config.dLightningPower);
 		world.strikeLightning(location);
-		if (LetItRain.usingZeus){
+		if (config.usingZeus){
 			LetItRain.plugin.getServer().getConsoleSender().sendMessage("Using Lightning: "+player.getName());
 		}
 	}
@@ -132,22 +129,19 @@ public class Events implements Listener{
 		if (!waitP.contains(player)){
 			StrikeRain(player, location);
 			waitP.add(player);
-    		Bukkit.getScheduler().scheduleSyncDelayedTask(LetItRain.plugin, new Runnable(){
-    			@Override
-    			public void run() {    					
-    				if (waitP.contains(player)){
-    					waitP.remove(player);
-    				}
-    			}    		
-        	}, LetItRain.Zeusdelay*20);
+    		Bukkit.getScheduler().scheduleSyncDelayedTask(LetItRain.plugin, () -> {
+                if (waitP.contains(player)){
+                    waitP.remove(player);
+                }
+            }, config.Zeusdelay*20);
     	} else {
-    		Resources.privateMsg(player, LetItRain.ZeusWait);
+    		Resources.privateMsg(player, config.ZeusWait);
     	}
 	}
 	
 	@EventHandler
 	public void dispenser(BlockDispenseEvent event){
-		if(event.getBlock().getType().equals(Material.DISPENSER) && event.getItem().getType().equals(Material.SNOW_BALL) && LetItRain.dispenserWorksWithFireSnowballs){
+		if(event.getBlock().getType().equals(Material.DISPENSER) && event.getItem().getType().equals(Material.SNOW_BALL) && config.dispenserWorksWithFireSnowballs){
 			
 			event.setCancelled(true);
 			

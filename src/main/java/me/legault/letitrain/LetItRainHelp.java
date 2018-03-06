@@ -19,7 +19,7 @@ public class LetItRainHelp implements CommandExecutor{
 		if ((args.length > 0) && (args[0].equals("effects"))) {
 			// Command: /letitrain effects
 			sender.sendMessage(ChatColor.GREEN + "Possible particle effect names:");
-			ArrayList<String> effects = new ArrayList<String>();
+			ArrayList<String> effects = new ArrayList<>();
 			for (Particle e : org.bukkit.Particle.values()) {
 				effects.add(e.toString());
 			}
@@ -30,15 +30,15 @@ public class LetItRainHelp implements CommandExecutor{
 		if (args.length == 0){
 			// Command: /letitrain
 			Resources.privateMsg(sender, "________________ " + LetItRain.plugin.getDescription().getFullName() + " ________________");
-			Resources.privateMsg(sender, "/rain <entity|item|hand> <amount|duration|amountPerSec/duration> <radius> <player|coordinate name> [effect]");
+			Resources.privateMsg(sender, "/rain <entity|item|hand> <amount|duration|amountPerSec/duration> <radius> <player|location name> [effect]");
 			Resources.privateMsg(sender, "/firerain - Drop burning entities");
-			Resources.privateMsg(sender, "/effectrain <entity|item|hand> <amount|duration|amountPerSec/duration> <radius> <player|coordinate name> [effect]");
+			Resources.privateMsg(sender, "/effectrain <entity|item|hand> <amount|duration|amountPerSec/duration> <radius> <player|location name> [effect]");
 			Resources.privateMsg(sender, "/letitrain effects - See valid effect names");
 			Resources.privateMsg(sender, "/letitrain reload - Reload the config");
-			Resources.privateMsg(sender, "/rain lightning <amount|duration> <radius> <player|coordinate name> - Spark lightning");
-			Resources.privateMsg(sender, "/rain lightningexplode <amount|duration> <radius> <player|coordinate name> - Spark lightning that explodes and breaks blocks");
-			Resources.privateMsg(sender, "/rain add <coordinate name> - Add a named coordinate");
-			Resources.privateMsg(sender, "/rain remove <coordinate name> - Remove a named coordinate");
+			Resources.privateMsg(sender, "/rain lightning <amount|duration> <radius> <player|location name> - Spark lightning");
+			Resources.privateMsg(sender, "/rain lightningexplode <amount|duration> <radius> <player|location name> - Spark lightning that explodes and breaks blocks");
+			Resources.privateMsg(sender, "/rain add <location name> - Add a named location");
+			Resources.privateMsg(sender, "/rain delete <location name> - Remove a named location");
 			Resources.privateMsg(sender, "/zeus - Give nether star; right click for lightning (destructive, breaks blocks)");
 			Resources.privateMsg(sender, "/strike <player> - Kill the player");
 			Resources.privateMsg(sender, "/launcher");
@@ -50,7 +50,7 @@ public class LetItRainHelp implements CommandExecutor{
 		if (args.length == 1){
 			// Command: /letitrain reload
 			if (args[0].equalsIgnoreCase("reload") && sender.hasPermission("LetItRain.reload")){
-				LetItRain.reloadCfg();
+				LetItRain.config.reloadConfig();
 				Resources.privateMsg(sender, "LetItRain Reloaded!");
 				return true;
 			}			

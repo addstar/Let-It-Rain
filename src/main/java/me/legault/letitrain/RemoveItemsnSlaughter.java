@@ -20,7 +20,7 @@ import org.bukkit.entity.Player;
 public class RemoveItemsnSlaughter implements CommandExecutor{
 
 	
-	public RemoveItemsnSlaughter(LetItRain plugin){}
+	public RemoveItemsnSlaughter(){}
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label,  String[] args) {

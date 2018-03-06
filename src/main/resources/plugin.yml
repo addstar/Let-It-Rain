@@ -1,6 +1,8 @@
 name: LetItRain
 main: me.legault.letitrain.LetItRain
 version: ${plugin.version}
+description: ${project.description}
+url: ${project.url}
 
 commands:
    zeus:
