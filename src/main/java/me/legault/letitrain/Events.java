@@ -100,13 +100,13 @@ public class Events implements Listener{
 	@EventHandler(priority = EventPriority.LOW)
     public void interact(PlayerInteractEvent event) {
 		
-		if (event.getPlayer().getItemInHand().getTypeId() == LetItRain.item && event.getPlayer().hasPermission("LetItRain.launcher")){
+		if (event.getPlayer().getItemInHand().getType() == LetItRain.item && event.getPlayer().hasPermission("LetItRain.launcher")){
 			
 			Entity snow = event.getPlayer().launchProjectile(Snowball.class);
 			snow.setFireTicks(1000);
 			snows.add(snow);
 			
-		}else if(event.getPlayer().getItemInHand().getTypeId() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
+		}else if(event.getPlayer().getItemInHand().getType() == LetItRain.itemZeus && event.getPlayer().hasPermission("LetItRain.zeus")){
 			
 			Player player = event.getPlayer();
 			Location location = player.getTargetBlock(null, 800).getLocation();
@@ -147,7 +147,7 @@ public class Events implements Listener{
 	
 	@EventHandler
 	public void dispenser(BlockDispenseEvent event){
-		if(event.getBlock().getType().equals(Material.DISPENSER) && event.getItem().getType().equals(Material.SNOW_BALL) && LetItRain.dispenserWorksWithFireSnowballs){
+		if(event.getBlock().getType().equals(Material.DISPENSER) && event.getItem().getType().equals(Material.SNOWBALL) && LetItRain.dispenserWorksWithFireSnowballs){
 			
 			event.setCancelled(true);
 			

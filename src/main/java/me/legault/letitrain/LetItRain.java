@@ -50,7 +50,7 @@ public class LetItRain extends JavaPlugin{
 	public static int defLightAmount, Zeusdelay, dAmount, maxAmount, maxRadius, dRadius, dLightningPower;
 	public static boolean usingZeus, dRemoveArtifact, destructiveArrows, checkForUpdate, rainBlocks, rainPotions, rainLava, rainWater, dispenserWorksWithFireSnowballs;
 	public static String rainLightnings, ZeusWait, dPunishMsg, dZeusMsg, dGrenadeMsg, dRainMsg, dFirerainMsg;
-	public static int item, itemZeus;
+	public static Material item, itemZeus;
 	private Rain rainExec;
 	private Zeus zeusExec;
 	private Punish punishExec;
@@ -203,8 +203,8 @@ public class LetItRain extends JavaPlugin{
 		dPunishMsg = "May the Gods punish [player] for his incompetence ";
 		maxAmount = 4096;
 		dRemoveArtifact = true;
-		dRainMsg = "May [entity] rain upon [player] ";
-		dFirerainMsg = "May burning [entity] rain upon [player] ";
+		dRainMsg = "May [entity]&r&b rain upon [player]";
+		dFirerainMsg = "May burning [entity]&r&b rain upon [player]";
 		rainLightnings = "The power of Zeus is with [player]";
 		dAmount = 500;
 		dRadius = 30;
@@ -254,8 +254,6 @@ public class LetItRain extends JavaPlugin{
 		dRainMsg = conf("LetItRain.Rain.Rain Message", dRainMsg);
 		dFirerainMsg = conf("LetItRain.Rain.Firerain message", dFirerainMsg);
 		destructiveArrows = conf("LetItRain.Rain.Deep impact arrows", true);
-		itemZeus = conf("LetItRain.Zeus.Launcher id", 369);
-		item = conf("LetItRain.Grenade Launcher.Launcher id", 377);
 		dAmount = conf("LetItRain.Rain.Default amount", 500);
 		dRadius = conf("LetItRain.Rain.Default radius", 30);
 		rainBlocks = !conf("LetItRain.Rain.Blacklist.Block", false); //Note: the nots are important. Don't delete
@@ -263,20 +261,16 @@ public class LetItRain extends JavaPlugin{
 		rainLava = conf("LetItRain.Rain.Blacklist.Lava", false);
 		rainWater = conf("LetItRain.Rain.Blacklist.Water", false);
 
-		item = config.getInt("LetItRain.Grenade Launcher.Launcher id");
-
-		Material.getMaterial(item);
-		if (Material.getMaterial(item) == null || item <= 0){
+		item = Material.getMaterial(conf("LetItRain.Grenade Launcher.Launcher id", "BLAZE_POWDER"));
+		if (item == null) {
 			log.severe("Invalid item in plugin.yml (<Grenade Launcher.Launcher id>)");
-		item = 377;
+			item = Material.BLAZE_POWDER;
 		}
 
-		itemZeus = config.getInt("LetItRain.Zeus.Launcher id");
-
-		Material.getMaterial(itemZeus);
-		if (Material.getMaterial(itemZeus) == null || itemZeus <= 0){
+		itemZeus = Material.getMaterial(conf("LetItRain.Zeus.Launcher id", "DEAD_BUSH"));
+		if (itemZeus == null) {
 			log.severe("Invalid item in plugin.yml (<Zeus.Launcher id>)");
-			itemZeus = 369;
+			itemZeus = Material.BLAZE_ROD;
 		}
 
 		//Put the entities in alphabetical order

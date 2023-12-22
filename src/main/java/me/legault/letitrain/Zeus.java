@@ -28,7 +28,7 @@ public class Zeus implements CommandExecutor{
 			
 			player = (Player)sender;
 			PlayerInventory inv = player.getInventory();
-			Material mat = Material.getMaterial(LetItRain.itemZeus);
+			Material mat = LetItRain.itemZeus;
 			ItemStack item = new ItemStack(mat);
 			if (!inv.contains(mat) && inv.firstEmpty() != -1){                	
 				inv.addItem(item);

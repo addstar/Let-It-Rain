@@ -39,9 +39,9 @@ import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
-import au.com.addstar.monolith.StringTranslator;
+//import au.com.addstar.monolith.StringTranslator;
 import au.com.addstar.monolith.lookup.Lookup;
-import au.com.addstar.monolith.lookup.MaterialDefinition;
+//import au.com.addstar.monolith.lookup.MaterialDefinition;
 
 @SuppressWarnings("deprecation")
 public class Rain implements CommandExecutor, TabCompleter{
@@ -164,34 +164,15 @@ public class Rain implements CommandExecutor, TabCompleter{
 			if (args[0].equalsIgnoreCase("hand") && sender instanceof Player && ((Player)sender).getItemInHand() != null && !((Player)sender).getItemInHand().getType().equals(Material.AIR)){
 				stack = ((Player)sender).getItemInHand();
 			} else {
-
-				// Method 1: check Material enum
-				if (false) {
-					Material mat = findMaterial(args[0]);
-
-					if (mat == null || mat == Material.AIR) {
-						Resources.privateMsg(sender, ChatColor.RED + "Item to drop is not a recognized material: " + args[0]);
-						return true;
-					}
-					stack = new ItemStack(mat);
-
-					if (args[0].contains(":")) {
-						stack = new ItemStack(findMaterial(args[0]), 1, (short) Integer.parseInt(args[0].split(":")[1]));
-						//mat = findMaterial(args[0].split(":")[0]);
-						//matID = Integer.parseInt(args[0].split(":")[1]);
-					}
-				} else {
-					// Method 2: use Monolith
-					MaterialDefinition itemDef = getItem(args[0]);
-					if (itemDef == null) {
-						Resources.privateMsg(sender, ChatColor.RED + "Item to drop is not a recognized material: " + args[0]);
-						return true;
-					}
-
-					stack = itemDef.asItemStack(1);
+				// Method 2: use Monolith
+				Material mat = Lookup.findItemByName(args[0]);
+				if (mat == null || mat == Material.AIR) {
+					Resources.privateMsg(sender, ChatColor.RED + "Item to drop is not a recognized material: " + args[0]);
+					return true;
 				}
-			}						
-		}		
+				stack = new ItemStack(mat);
+			}
+		}
 
 		// Validate entities/potions
 		if (entityToDrop == null && stack.getType().equals(Material.AIR) && potion == null && !isLightning){
@@ -443,15 +424,17 @@ public class Rain implements CommandExecutor, TabCompleter{
 		String name = "";
 		
 		if (fEntityToDrop != null)
-			name = fEntityToDrop.getEntityClass().getSimpleName();
+			name = fEntityToDrop.getEntityClass().getSimpleName().toLowerCase();
 		else if(potion != null)
-			name = potion.name() + " potion";
+			name = potion.name().toLowerCase() + " potion";
 		else if(isLightning)
 			name = "Lightning";
+		else if(stack.getType() == Material.PLAYER_HEAD)
+			name = stack.getItemMeta().getDisplayName();
 		else
-			name = StringTranslator.getName(stack);
+			name = stack.getType().name().toLowerCase();
 
-		name = name.replaceAll("_", " ").toLowerCase();
+		name = name.replaceAll("_", " ");
 		
 		// Fix up spawn egg names
 		if (name.startsWith("spawn ")) {
@@ -649,69 +632,7 @@ public class Rain implements CommandExecutor, TabCompleter{
 		}
 		return null;
 	}
-	
-	private MaterialDefinition getItem(String search)
-	{
-		// Get item value + data value
-		String[] parts = search.split(":");
-		String itemname = parts[0];
-		MaterialDefinition def = getMaterial(itemname);
-		if (def == null) return null;
-		
-		if(search.contains(":")) {
-			String dpart = search.split(":")[1];
-			try {
-				short data = Short.parseShort(dpart);
-				if(data < 0)
-					throw new IllegalArgumentException("Data value for " + itemname + " cannot be less than 0");
 
-				// Return new definition with specified data value
-				return new MaterialDefinition(def.getMaterial(), data);
-			}
-			catch(NumberFormatException e) {
-				throw new IllegalArgumentException("Data value after " + itemname);
-			}
-		} else {
-			return def;
-		}
-	}
-	
-	@SuppressWarnings( "deprecation" )
-    private MaterialDefinition getMaterial(String name)
-	{
-		// Bukkit name
-		Material mat = Material.getMaterial(name.toUpperCase());
-		if (mat != null)
-			return new MaterialDefinition(mat, (short)0);
-		
-		// Id
-		try
-		{
-			short id = Short.parseShort(name);
-			mat = Material.getMaterial(id);
-		}
-		catch(NumberFormatException e)
-		{
-		}
-		
-		if(mat != null)
-			return new MaterialDefinition(mat, (short)0);
-
-		// ItemDB
-		return Lookup.findItemByName(name);
-	}
-
-
-	private Material findMaterial(String token){
-		
-		try{
-			int id = Integer.parseInt(token);
-			return Material.getMaterial(id);
-		}catch(NumberFormatException e){	
-			return Material.getMaterial(toSingular(token).toUpperCase());
-		}
-	}
-		
 	private PotionType findPotion(String token){
 		
 		token = token.replaceAll("[(potion|instant)_ ]", "").toLowerCase();
@@ -771,9 +692,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 	 * Grammar: returns the singular lower case version of a word
 	 */
 	private static String toSingular(String word){
-
-		word = word.toLowerCase();
-		
 		if(!word.equals("zombies") || !word.equals("slimes")){
 
 			if(word.matches(".*ives$"))
@@ -797,8 +715,6 @@ public class Rain implements CommandExecutor, TabCompleter{
 	 * Grammar: returns the plural lower case version of a word
 	 */
 	private static String toPlural(String word){
-		word = word.toLowerCase();
-		
 		if(word.equals("lava") || word.equals("water") || word.equals("wool") || word.endsWith("grass")
 				|| word.endsWith("glass") || word.endsWith("beef") || word.endsWith("planks"))
 			return word;
